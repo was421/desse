@@ -98,7 +98,9 @@ class ImpSock(object):
             open("packetlog.log", "a").write("[%s][c %r][s %r] %s %r\n" % (time.asctime(time.gmtime()), self.sc.getpeername(), self.sc.getsockname(), msg, data))
 
 class Server(object):
+    text_conf:dict
     def __init__(self):
+        self.text_conf = Config().get_conf_dict("TEXT")
         self.GhostManager = GhostManager()
         self.MessageManager = MessageManager()
         self.SOSManager = SOSManager()
@@ -239,13 +241,8 @@ class Server(object):
                 logging.error("Exception! Traceback:\n%s" % tb)
             
     def handle_login(self, params, serverport):
-        motd  = "Welcome to ymgve's test server!\r\n"
-        motd += "This is a temporary server, it will\r\n"
-        motd += "eventually be shut down.\r\n\r\n"
-        motd += "source code:\r\n"
-        motd += "https://github.com/ymgve/desse\r\n"
+        motd = self.text_conf.get("motd")
         
-
         regiontotal, blockslist = self.GhostManager.get_current_players(serverport)
         motd2  = "Current players online: %d\r\n" % sum(regiontotal.values())
         motd2 += "US %d  EU %d  JP %d\r\n" % (regiontotal[SERVER_PORT_US], regiontotal[SERVER_PORT_EU], regiontotal[SERVER_PORT_JP])
