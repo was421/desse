@@ -28,6 +28,7 @@ if __name__ == '__main__':
 
     if(Config().get_flag("local_dns_server")):
         local_dns = DNS()
-
+        
+    info_ss = Config().get_conf_dict("INFO_SS")
     server = Server()
-    server.start()
+    server.start(info_ss.get("port"))

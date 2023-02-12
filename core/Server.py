@@ -1,11 +1,9 @@
-from flask import Flask, request, Response
+from flask import request
 from functools import wraps
-from waitress import serve
-
-import threading,base64,struct
+import base64,struct
 
 from core.Config import Config
-
+from core.FlaskContainer import FlaskContainer as FC
 
 from emu.GhostManager import *
 from emu.MessageManager import *
@@ -13,23 +11,6 @@ from emu.PlayerManager import *
 from emu.ReplayManager import *
 from emu.SOSManager import *
 from emu.Util import *
-
-class FC:
-    f:Flask
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(FC, cls).__new__(cls)
-            cls.instance._setup()
-        return cls.instance
-    
-    def _setup(self):
-        self.f = Flask(__name__)
-    
-    def start_daemon(self):
-        threading.Thread(target=lambda: serve(self.f,host='0.0.0.0',port=18000),daemon=True).start()
-        
-    def start_blocking(self):
-        serve(self.f,host='0.0.0.0',port=18000)
     
 class Server:
     name:str = "BACON"
@@ -48,9 +29,10 @@ class Server:
         self.ReplayManager = ReplayManager()
         self.players = {}
     
-    def start(self):
-        FC().start_blocking()
+    def start(self,port):
+        FC().start_blocking(port)
     
+    # this is an awful thing but it should get self working as the first param
     # def this():
     #     def _this(f):
     #         @wraps(f)

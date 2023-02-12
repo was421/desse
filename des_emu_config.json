@@ -9,7 +9,8 @@
     "log_file": "emulator.log"
   },
   "INFO_SS": {
-    "ip": "127.0.0.1"
+    "ip": "127.0.0.1",
+    "port":18000
   },
   "DNS": {
     "port":53,

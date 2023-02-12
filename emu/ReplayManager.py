@@ -36,7 +36,7 @@ class Replay(object):
     def from_db_row(self, row):
         self.ghostID, self.characterID, self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz, self.messageID, self.mainMsgID, self.addMsgCateID, self.replayBinary, self.legacy = row
         self.characterID = self.characterID.encode("utf8")
-        self.replayBinary = self.replayBinary.encode("utf8")
+        #self.replayBinary = self.replayBinary.encode("utf8")
 
     def to_db_row(self):
         return (self.ghostID, self.characterID, self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz, self.messageID, self.mainMsgID, self.addMsgCateID, self.replayBinary, self.legacy)

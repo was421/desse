@@ -2,7 +2,7 @@ import base64, traceback, logging, zlib, io, struct, json, logging
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes 
 
-SERVER_PORT_BOOTSTRAP = 18000
+#SERVER_PORT_BOOTSTRAP = 18000
 SERVER_PORT_US = 18666
 SERVER_PORT_EU = 18667
 SERVER_PORT_JP = 18668
