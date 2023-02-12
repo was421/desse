@@ -1,4 +1,4 @@
-import socket, traceback, struct, base64, random, cStringIO, zlib, select, time, logging
+import socket, traceback, struct, base64, random, zlib, select, time, logging
 from time import gmtime, strftime
 
 from emu.Util import *
@@ -9,20 +9,40 @@ from emu.PlayerManager import *
 from emu.ReplayManager import *
 from emu.SOSManager import *
 
-logging.basicConfig(level=logging.DEBUG,
+from core.Config import Config
+from core.DNS import DNS
+
+log_conf = Config().get_conf_dict("LOGGING")
+level = logging.NOTSET
+
+match(log_conf.get("log_level")):
+    case "DEBUG":
+        level = logging.DEBUG
+    case "INFO":
+        level = logging.INFO
+    case "WARNING":
+        level = logging.WARNING
+    case "ERROR":
+        level = logging.ERROR
+        
+logging.basicConfig(level=level,
                     format="[%(asctime)s][%(levelname)s] %(message)s",
-                    filename="emulator.log")
+                    filename=log_conf.get("log_file"))
 
 stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.INFO)
+stream_handler.setLevel(logging.DEBUG)
 
 logging.getLogger("").addHandler(stream_handler)
 
 class ImpSock(object):
-    def __init__(self, sc, name):
+    sc:socket.socket
+    name:str
+    recvdata:bytearray
+    
+    def __init__(self, sc:socket.socket, name:str):
         self.sc = sc
         self.name = name
-        self.recvdata = ""
+        self.recvdata = bytes()
         self.sc.settimeout(10)
         
     def recv(self, sz):
@@ -38,27 +58,27 @@ class ImpSock(object):
         self.sc.sendall(data)
         
     def recv_line(self):
-        line = ""
+        line:bytearray = bytearray()
         while True:
             c = self.recv(1)
             if len(c) == 0:
                 logging.warning("DISCONNECT at line %r" % line)
                 raise Exception("DISCONNECT")
             line += c
-            if line.endswith("\r\n"):
+            if line.endswith("\r\n".encode()):
                 line = line[:-2]
                 self.logpacket("recv line", line)
                 return line
             
-    def recv_all(self, size):
-        res = ""
+    def recv_all(self, size) -> bytearray:
+        res:bytearray = bytearray()
         while len(res) < size:
             data = self.recv(size - len(res))
             if len(data) == 0:
                 logging.warning("DISCONNECT %r" % res)
                 raise Exception("DISCONNECT")
             res += data
-            
+           
         self.logpacket("recv data", res)
         return res
             
@@ -68,13 +88,14 @@ class ImpSock(object):
             line = self.recv_line()
             if len(line) == 0:
                 break
-            key, value = line.split(": ")
-            headers[key] = value
+            key, value = line.split(": ".encode())
+            headers[key.decode()] = value.decode()
             
         return headers
     
     def logpacket(self, msg, data):
-        open("packetlog.log", "a").write("[%s][c %r][s %r] %s %r\n" % (time.asctime(time.gmtime()), self.sc.getpeername(), self.sc.getsockname(), msg, data))
+        if(Config().get_flag("packet_logging")):
+            open("packetlog.log", "a").write("[%s][c %r][s %r] %s %r\n" % (time.asctime(time.gmtime()), self.sc.getpeername(), self.sc.getsockname(), msg, data))
 
 class Server(object):
     def __init__(self):
@@ -92,9 +113,10 @@ class Server(object):
             server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server.bind(('', port))
             server.listen(5)
+            #client_sock, client_addr = server.accept()
             servers.append(server)
         
-        logging.info("Server listening")
+        logging.info("DeSSE listening")
 
         while True:
             try:
@@ -117,11 +139,11 @@ class Server(object):
                 
                 if serverport == SERVER_PORT_BOOTSTRAP:
                     logging.debug("got bootstrap from %r to %r request %r" % (client_addr, serverport, req))
-                    data = open("info.ss", "rb").read()
+                    data = Config().get_info_ss()
                     res = self.prepare_response_bootstrap(data)
                 else:
                     params = get_params(cdata)
-                    clientcmd = req.split()[1].split("/")[-1]
+                    clientcmd = req.decode().split()[1].split("/")[-1]
                     
                     # updateOtherPlayerGrade contains the characterID of the other player, skip setting it as our own ID
                     if "characterID" in params and clientcmd != "updateOtherPlayerGrade":
@@ -199,7 +221,10 @@ class Server(object):
                         logging.error("req %r" % req)
                         logging.error("cdata %r" % cdata)
                         raise Exception("UNKNOWN CLIENT REQUEST")
-                        
+                    
+                    if(isinstance(data,str)):
+                        data = data.encode()
+                    
                     res = self.prepare_response(cmd, data)
                     
                 sc.sendall(res)
@@ -226,7 +251,7 @@ class Server(object):
         motd2 += "US %d  EU %d  JP %d\r\n" % (regiontotal[SERVER_PORT_US], regiontotal[SERVER_PORT_EU], regiontotal[SERVER_PORT_JP])
         motd2 += "Popular areas in your region:\r\n"
         for count, blockID in blockslist[::-1][0:5]:
-             motd2 += "%4d %s\r\n" % (count, blocknames[blockID])
+             motd2 += "%4d %s\r\n" % (count, BLOCK_NAMES[blockID])
              
         # first byte
         # 0x00 - present EULA, create account (not working)
@@ -237,7 +262,7 @@ class Server(object):
         # 0x06 - online service has been terminated
         # 0x07 - network play cannot be used with this version
         
-        return 0x02, "\x01" + "\x02" + motd + "\x00" + motd2 + "\x00"
+        return 0x02, bytes("\x01" + "\x02" + motd + "\x00" + motd2 + "\x00",encoding="UTF-8")
         
     def handle_getTimeMessage(self, params):
         # first byte
@@ -247,21 +272,23 @@ class Server(object):
 
         return 0x22, "\x00\x00\x00"
         
-    def prepare_response(self, cmd, data):
+    def prepare_response(self, cmd, data:bytes) -> bytes:
+        out:bytearray = bytearray(data)
+        
         # The official servers were REALLY inconsistent with the data length field
         # I just set it to what seems to be the correct value and hope for the best,
         # has been working so far
-        data = chr(cmd) + struct.pack("<I", len(data) + 5) + data
+        out = chr(cmd).encode() + struct.pack("<I", len(data) + 5) + data
         
         # The newline at the end here is important for some reason
         # - standard responses won't work without it
         # - bootstrap response won't work WITH it
-        return self.add_headers(base64.b64encode(data) + "\n")
+        return self.add_headers(bytearray(base64.b64encode(out)) + b"\n")
 
-    def prepare_response_bootstrap(self, data):
+    def prepare_response_bootstrap(self, data) -> bytes:
         return self.add_headers(base64.b64encode(data))
         
-    def add_headers(self, data):
+    def add_headers(self, data:bytes) -> bytes:
         res  = "HTTP/1.1 200 OK\r\n"
         res += "Date: " + strftime("%a, %d %b %Y %H:%M:%S GMT", gmtime()) + "\r\n"
         res += "Server: Apache\r\n"
@@ -269,8 +296,12 @@ class Server(object):
         res += "Connection: close\r\n"
         res += "Content-Type: text/html; charset=UTF-8\r\n"
         res += "\r\n"
-        res += data
-        return res
-        
+        out:bytearray = bytearray(res.encode())
+        out += data
+        return out
+
+if(Config().get_flag("local_dns_server")):
+    local_dns = DNS()
+ 
 server = Server()
 server.run()

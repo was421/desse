@@ -1,10 +1,12 @@
 import logging, os, sqlite3, struct
 
+from core.Config import Config
 from emu.Util import *
 
 class PlayerManager(object):
     def __init__(self):
-        dbfilename = "db/players.sqlite"
+        self.conf = Config().get_conf_dict("SQLite")
+        dbfilename = self.conf["players_db_path"]
         if not os.path.isfile(dbfilename):
             conn = sqlite3.connect(dbfilename)
             c = conn.cursor()
@@ -56,8 +58,8 @@ class PlayerManager(object):
         row = self.conn.execute("select desired_tendency from players where characterID = ?", (characterID,)).fetchone()
         desired_tendency = row[0]
         
-        data = ""
-        for i in xrange(7):
+        data:bytearray = bytearray()
+        for i in range(7):
             data += struct.pack("<ii", desired_tendency, 0)
             
         logging.debug("Player %r with desired tendency %d" % (characterID, desired_tendency))
@@ -67,7 +69,9 @@ class PlayerManager(object):
     def handle_getMultiPlayGrade(self, params):
         characterID = params["NPID"]
         ratings = self.getPlayerStats(characterID)
-        data = "\x01" + struct.pack("<iiiiii", *ratings)
+        data:bytearray = bytearray()
+        data += b"\x01"
+        data += struct.pack("<iiiiii", *ratings)
         
         logging.debug("Player %r multiplayer stats %r" % (characterID, ratings))
         
@@ -82,7 +86,9 @@ class PlayerManager(object):
         
         logging.debug("Player %r message rating %d" % (characterID, messagerating))
         
-        data = "\x01" + struct.pack("<i", messagerating)
+        data = bytearray()
+        data += b"\x01"
+        data += struct.pack("<i", messagerating)
         return 0x29, data
     
     def handle_initializeMultiPlay(self, params):

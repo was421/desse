@@ -1,0 +1,53 @@
+{
+  "local_dns_server": true,
+  "packet_logging": false,
+  "LOGGING": {
+    "log_level": "INFO",
+    "log_file": "emulator.log"
+  },
+  "INFO_SS": {
+    "ip": "127.0.0.1"
+  },
+  "DNS": {
+    "port":53,
+    "failover":"1.1.1.1",
+    "records": [
+      {
+        "host": "ds-eu-c.scej-online.jp",
+        "type": "A",
+        "ip": "127.0.0.1"
+      },
+      {
+        "host": "ds-eu-g.scej-online.jp",
+        "type": "A",
+        "ip": "127.0.0.1"
+      },
+      {
+        "host": "c.demons-souls.com",
+        "type": "A",
+        "ip": "127.0.0.1"
+      },
+      {
+        "host": "g.demons-souls.com",
+        "type": "A",
+        "ip": "127.0.0.1"
+      },
+      {
+        "host": "cmnap.scej-online.jp",
+        "type": "A",
+        "ip": "127.0.0.1"
+      },
+      {
+        "host": "demons-souls.scej-online.jp",
+        "type": "A",
+        "ip": "127.0.0.1"
+      }
+    ]
+  },
+  "SQLite": {
+    "messages_db_path": "db/messages.sqlite",
+    "replays_db_path": "db/replays.sqlite",
+    "players_db_path": "db/players.sqlite",
+    "admin_db_path": "db/admin.sqlite"
+  }
+}

@@ -1,4 +1,4 @@
-import base64, cStringIO, logging, random, struct, time
+import base64, logging, random, struct, time, copy
 
 from emu.Util import *
 
@@ -16,7 +16,9 @@ class GhostManager(object):
     def kill_stale_ghosts(self):
         current_time = time.time()
         
-        for ghost in self.ghosts.values():
+        #dictionary sometimes changes size during iteration, this is a lazy fix
+        ghost_dict = copy.copy(self.ghosts)
+        for ghost in ghost_dict.values():
             if ghost.timestamp + 30.0 <= current_time:
                 logging.debug("Deleted inactive ghost of %r" % ghost.characterID)
                 del self.ghosts[ghost.characterID]
@@ -55,9 +57,9 @@ class GhostManager(object):
             if characterID in self.ghosts:
                 prevGhostBlockID = self.ghosts[characterID].ghostBlockID
                 if ghostBlockID != prevGhostBlockID:
-                    logging.debug("Player %r moved from %s to %s" % (characterID, blocknames[prevGhostBlockID], blocknames[ghostBlockID]))
+                    logging.debug("Player %r moved from %s to %s" % (characterID, BLOCK_NAMES[prevGhostBlockID], BLOCK_NAMES[ghostBlockID]))
             else:
-                logging.debug("Player %r spawned into %s" % (characterID, blocknames[ghostBlockID]))
+                logging.debug("Player %r spawned into %s" % (characterID, BLOCK_NAMES[ghostBlockID]))
                 
             self.ghosts[characterID] = ghost
             self.ghosts[characterID].serverport = serverport

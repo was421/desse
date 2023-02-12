@@ -1,3 +1,5 @@
+A very very quick and dirty python3 port of desse; It's not done yet but soon:tm:
+
 DeSSE - Demon's Souls Server Emulator
 
 This is a very quick and dirty server emulator that supports the most basic features.
@@ -14,15 +16,16 @@ be turned off at some point. It works right now, at least.
  
 Requirements:
 
- - python 2.6/2.7
- - pycrypto
+ - python 3.10.8+
+ - cryptography,dnserver
  
 
 Setup:
+ - run command `pip install cryptography dnserver`
+ - edit `des_emu_config.json`'s to reflect your public ip in INFO_SS->ip
+ - if `local_dns_server` is set to `true` ensure all records' ips match the one entered in the step before
 
- - set up some kind of DNS proxy (I used https://github.com/Crypt0s/FakeDns - edit the remote.conf file and insert your server's IP)
- - edit info.ss and insert your server's IP
- - create "db" subdirectory in your server directory
+Starting the Server
  - run server with `python emulator.py`
  
 Everyone that wants to connect to the server needs to configure the DNS to point to your DNS proxy in their PS3 network settings.

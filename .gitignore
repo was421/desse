@@ -137,4 +137,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+#sqllite files
 *.sqlite

@@ -1,5 +1,6 @@
-import cStringIO, logging, os, sqlite3, struct
+import io, logging, os, sqlite3, struct
 
+from core.Config import Config
 from emu.Util import *
 
 class Replay(object):
@@ -7,13 +8,13 @@ class Replay(object):
         pass
         
     def unserialize(self, data):
-        sio = cStringIO.StringIO(data)
+        sio = io.BytesIO(data)
         self.ghostID = struct.unpack("<I", sio.read(4))[0]
         self.characterID = readcstring(sio)
         self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz = struct.unpack("<iffffff", sio.read(28))
         self.messageID, self.mainMsgID, self.addMsgCateID = struct.unpack("<iii", sio.read(12))
         self.replayBinary = readcstring(sio)
-        assert sio.read() == ""
+        assert sio.read() == "".encode()
         self.legacy = 1
 
     def from_params(self, params, ghostID, rawReplay):
@@ -41,19 +42,22 @@ class Replay(object):
         return (self.ghostID, self.characterID, self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz, self.messageID, self.mainMsgID, self.addMsgCateID, self.replayBinary, self.legacy)
 
     def serialize_header(self):
-        res = ""
+        res:bytearray = bytearray()
         res += struct.pack("<I", self.ghostID)
-        res += self.characterID + "\x00"
+        if(isinstance(self.characterID,str)):
+            self.characterID = self.characterID.encode()
+        res += self.characterID + b"\x00"
         res += struct.pack("<iffffff", self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz)
         res += struct.pack("<iii", self.messageID, self.mainMsgID, self.addMsgCateID)
         return res
 
     def __str__(self):
-        return "<Replay: ghostID %d player %r block %s>" % (self.ghostID, self.characterID, blocknames[self.blockID])
+        return "<Replay: ghostID %d player %r block %s>" % (self.ghostID, self.characterID, BLOCK_NAMES[self.blockID])
         
 class ReplayManager(object):
     def __init__(self):
-        dbfilename = "db/replays.sqlite"
+        self.conf  = Config().get_conf_dict("SQLite")
+        dbfilename = self.conf["replays_db_path"]
         if not os.path.isfile(dbfilename):
             conn = sqlite3.connect(dbfilename)
             c = conn.cursor()
@@ -117,9 +121,9 @@ class ReplayManager(object):
                 to_send.append(rep.serialize_header())
                 num_legacy += 1
 
-        res = struct.pack("<I", len(to_send)) + "".join(to_send)
+        res = struct.pack("<I", len(to_send)) + b"".join(to_send)
 
-        logging.debug("Sending %d live replays and %d legacy replays for block %s" % (num_live, num_legacy, blocknames[blockID]))
+        logging.debug("Sending %d live replays and %d legacy replays for block %s" % (num_live, num_legacy, BLOCK_NAMES[blockID]))
         
         return 0x1f, res
         

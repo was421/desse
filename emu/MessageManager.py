@@ -1,18 +1,20 @@
-import cStringIO, logging, os, sqlite3, struct
+import io, logging, os, sqlite3, struct
 
+from core.Config import Config
 from emu.Util import *
+
 
 class Message(object):
     def __init__(self):
         pass
         
     def unserialize(self, data):
-        sio = cStringIO.StringIO(data)
+        sio = io.BytesIO(data)
         self.bmID = struct.unpack("<I", sio.read(4))[0]
         self.characterID = readcstring(sio)
         self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz = struct.unpack("<iffffff", sio.read(28))
         self.messageID, self.mainMsgID, self.addMsgCateID, self.rating = struct.unpack("<iiii", sio.read(16))
-        assert sio.read() == ""
+        assert sio.read() == "".encode()
         self.legacy = 1
         
     def from_params(self, params, bmID):
@@ -39,31 +41,34 @@ class Message(object):
         return (self.bmID, self.characterID, self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz, self.messageID, self.mainMsgID, self.addMsgCateID, self.rating, self.legacy)
         
     def serialize(self):
-        res = ""
+        res:bytearray = bytearray()
         res += struct.pack("<I", self.bmID)
-        res += self.characterID + "\x00"
+        if(isinstance(self.characterID,str)):
+            self.characterID = self.characterID.encode()
+        res += self.characterID + b"\x00"
         res += struct.pack("<iffffff", self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz)
         res += struct.pack("<iiii", self.messageID, self.mainMsgID, self.addMsgCateID, self.rating)
         return res
 
     def __str__(self):
-        if self.mainMsgID in messageids:
-            if self.messageID in messageids:
-                extra = messageids[self.messageID]
+        if self.mainMsgID in MESSAGE_IDS:
+            if self.messageID in MESSAGE_IDS:
+                extra = MESSAGE_IDS[self.messageID]
             else:
                 extra = "[%d]" % self.messageID
                 
-            message = messageids[self.mainMsgID].replace("***", extra)
-            prettymessage = "%d %s %r %s %d" % (self.bmID, blocknames[self.blockID], self.characterID, message, self.rating)
+            message = MESSAGE_IDS[self.mainMsgID].replace("***", extra)
+            prettymessage = "%d %s %r %s %d" % (self.bmID, BLOCK_NAMES[self.blockID], self.characterID, message, self.rating)
             
         else:
-            prettymessage = "%d %s %r [%d] [%d] %d" % (self.bmID, blocknames[self.blockID], self.characterID, self.messageID, self.mainMsgID, self.rating)
+            prettymessage = "%d %s %r [%d] [%d] %d" % (self.bmID, BLOCK_NAMES[self.blockID], self.characterID, self.messageID, self.mainMsgID, self.rating)
 
         return prettymessage
         
 class MessageManager(object):
     def __init__(self):
-        dbfilename = "db/messages.sqlite"
+        self.conf = Config().get_conf_dict("SQLite")
+        dbfilename = self.conf.get("messages_db_path")
         if not os.path.isfile(dbfilename):
             conn = sqlite3.connect(dbfilename)
             c = conn.cursor()
@@ -138,9 +143,9 @@ class MessageManager(object):
                 to_send.append(msg.serialize())
                 num_legacy += 1
         
-        res = struct.pack("<I", len(to_send)) + "".join(to_send)
+        res = struct.pack("<I", len(to_send)) + b"".join(to_send)
             
-        logging.debug("Sending %d own messages, %d others messages and %d legacy messages for block %s" % (num_own, num_others, num_legacy, blocknames[blockID]))
+        logging.debug("Sending %d own messages, %d others messages and %d legacy messages for block %s" % (num_own, num_others, num_legacy, BLOCK_NAMES[blockID]))
         
         return 0x1f, res
         

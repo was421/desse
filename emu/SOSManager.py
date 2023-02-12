@@ -26,10 +26,12 @@ class SOSData(object):
         
         self.updatetime = time.time()
         
-    def serialize(self):
-        res = ""
+    def serialize(self) -> bytes:
+        res:bytearray = bytearray()
         res += struct.pack("<I", self.sosID)
-        res += self.characterID + "\x00"
+        if(isinstance(self.characterID,str)):
+            self.characterID = self.characterID.encode()
+        res += self.characterID + b"\x00"
         res += struct.pack("<fff", self.posx, self.posy, self.posz)
         res += struct.pack("<fff", self.angx, self.angy, self.angz)
         res += struct.pack("<III", self.messageID, self.mainMsgID, self.addMsgCateID)
@@ -53,7 +55,7 @@ class SOSData(object):
         else:
             summontype = "Unknown (%d)" % self.isBlack
             
-        return "<SOS id#%d %s %r %s lv%d>" % (self.sosID, blocknames[self.blockID], self.characterID, summontype, self.playerLevel)
+        return "<SOS id#%d %s %r %s lv%d>" % (self.sosID, BLOCK_NAMES[self.blockID], self.characterID, summontype, self.playerLevel)
 
 class SOSManager(object):
     def __init__(self):
@@ -92,8 +94,9 @@ class SOSManager(object):
                         sos_new.append(sos.serialize())
                         logging.debug("adding new SOS %d" % sos.sosID)
     
-        data =  struct.pack("<I", len(sos_known)) + "".join(sos_known)
-        data += struct.pack("<I", len(sos_new)) + "".join(sos_new)
+        data:bytearray = bytearray()
+        data +=  struct.pack("<I", len(sos_known)) + b"".join(sos_known)
+        data += struct.pack("<I", len(sos_new)) + b"".join(sos_new)
         
         return 0x0f, data
 
