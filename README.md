@@ -22,7 +22,7 @@ Requirements:
 
 Setup:
  - run command `pip install cryptography dnserver`
- - edit `des_emu_config.json`'s to reflect your public ip in INFO_SS->ip
+ - edit `des_emu_config.json` to reflect your public ip in INFO_SS->ip
  - if `local_dns_server` is set to `true` ensure all records' ips match the one entered in the step before
 
 Starting the Server
