@@ -56,16 +56,16 @@ class Config:
         <lang8></lang8>
         <lang11></lang11>
         <lang12></lang12>
-        <gameurl1>http://0.0.0.0:18666/cgi-bin/</gameurl1>
-        <gameurl2>http://0.0.0.0:18667/cgi-bin/</gameurl2>
-        <gameurl3>http://0.0.0.0:18668/cgi-bin/</gameurl3>
-        <gameurl4>http://0.0.0.0:18668/cgi-bin/</gameurl4>
-        <gameurl5>http://0.0.0.0:18667/cgi-bin/</gameurl5>
-        <gameurl6>http://0.0.0.0:18667/cgi-bin/</gameurl6>
-        <gameurl7>http://0.0.0.0:18667/cgi-bin/</gameurl7>
-        <gameurl8>http://0.0.0.0:18667/cgi-bin/</gameurl8>
-        <gameurl11>http://0.0.0.0:18668/cgi-bin/</gameurl11>
-        <gameurl12>http://0.0.0.0:18668/cgi-bin/</gameurl12>
+        <gameurl1>http://0.0.0.0:18000/us/</gameurl1>
+        <gameurl2>http://0.0.0.0:18000/eu/</gameurl2>
+        <gameurl3>http://0.0.0.0:18000/jp/</gameurl3>
+        <gameurl4>http://0.0.0.0:18000/jp/</gameurl4>
+        <gameurl5>http://0.0.0.0:18000/eu/</gameurl5>
+        <gameurl6>http://0.0.0.0:18000/eu/</gameurl6>
+        <gameurl7>http://0.0.0.0:18000/eu/</gameurl7>
+        <gameurl8>http://0.0.0.0:18000/eu/</gameurl8>
+        <gameurl11>http://0.0.0.0:18000/jp/</gameurl11>
+        <gameurl12>http://0.0.0.0:18000/jp/</gameurl12>
         <browserurl1></browserurl1>
         <browserurl2></browserurl2>
         <browserurl3></browserurl3>

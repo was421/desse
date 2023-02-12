@@ -105,7 +105,7 @@ class MessageManager(object):
             
             logging.info("Loaded legacy messages into database")
         
-        self.conn = sqlite3.connect(dbfilename)
+        self.conn = sqlite3.connect(dbfilename,check_same_thread=False)
         
     def handle_getBloodMessage(self, params):
         characterID = params["characterID"]

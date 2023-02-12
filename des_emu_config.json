@@ -1,11 +1,11 @@
 {
   "local_dns_server": true,
-  "packet_logging": false,
+  "packet_logging": true,
   "TEXT":{
     "motd":"Welcome to Church Guard's test server!\r\nThis is a temporary server, it will\r\neventually be shut down.\r\n\r\nsource code:\r\nhttps://github.com/was421/desse\r\n"
   },
   "LOGGING": {
-    "log_level": "INFO",
+    "log_level": "DEBUG",
     "log_file": "emulator.log"
   },
   "INFO_SS": {

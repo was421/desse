@@ -26,7 +26,7 @@ class PlayerManager(object):
             
             logging.info("Created user database")
             
-        self.conn = sqlite3.connect(dbfilename)
+        self.conn = sqlite3.connect(dbfilename,check_same_thread=False)
 
     def ensure_user_created(self, characterID):
         row = self.conn.execute("select count(*) from players where characterID = ?", (characterID,)).fetchone()

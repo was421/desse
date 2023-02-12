@@ -17,11 +17,11 @@ be turned off at some point. It works right now, at least.
 Requirements:
 
  - python 3.10.8+
- - cryptography,dnserver
+ - cryptography, dnserver, flask, waitress
  
 
 Setup:
- - run command `pip install cryptography dnserver`
+ - run command `pip install cryptography dnserver flask waitress`
  - edit `des_emu_config.json` to reflect your public ip in INFO_SS->ip
  - if `local_dns_server` is set to `true` ensure all records' ips match the one entered in the step before
 

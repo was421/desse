@@ -30,7 +30,7 @@ class Replay(object):
         self.messageID = int(params["messageID"])
         self.mainMsgID = int(params["mainMsgID"])
         self.addMsgCateID = int(params["addMsgCateID"])
-        self.replayBinary = base64.b64encode(rawReplay).replace("+", " ")
+        self.replayBinary = base64.b64encode(rawReplay).replace(b"+", b" ")
         self.legacy = 0
 
     def from_db_row(self, row):
@@ -94,7 +94,7 @@ class ReplayManager(object):
             
             logging.info("Loaded legacy replays into database")
         
-        self.conn = sqlite3.connect(dbfilename)
+        self.conn = sqlite3.connect(dbfilename,check_same_thread=False)
         
     def handle_getReplayList(self, params):
         blockID = make_signed(int(params["blockID"]))
