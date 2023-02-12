@@ -29,9 +29,6 @@ class Server:
         self.ReplayManager = ReplayManager()
         self.players = {}
     
-    def start(self,port):
-        FC().start_blocking(port)
-    
     # this is an awful thing but it should get self working as the first param
     # def this():
     #     def _this(f):
@@ -71,12 +68,13 @@ class Server:
             return __des_api
         return _des_api
     
-    @FC().f.route('/demons-souls-us/ss.info', methods=['POST'])
+    @FC().route('/<info_endpoint>/ss.info', methods=['POST'])
     @des_api(bootstrap=True)
-    def bootstrap():
+    def bootstrap(info_endpoint):
+        logging.debug(f"{request.remote_addr} requested ss.info on {info_endpoint}")
         return 0x00,Config().get_info_ss()
     
-    @FC().f.route('/<region>/login.spd', methods=['POST'])
+    @FC().route('/<region>/login.spd', methods=['POST'])
     @des_api()
     def login(region:str):
         self = Server()
@@ -102,7 +100,7 @@ class Server:
         
         return 0x02, bytes("\x01" + "\x02" + motd + "\x00" + motd2 + "\x00",encoding="UTF-8")
     
-    @FC().f.route('/<region>/initializeCharacter.spd', methods=['POST'])
+    @FC().route('/<region>/initializeCharacter.spd', methods=['POST'])
     @des_api()
     def initializeCharacter(region):
         self = Server()
@@ -110,31 +108,31 @@ class Server:
         self.players[request.remote_addr] = characterID
         return cmd,data
     
-    @FC().f.route('/<region>/getQWCData.spd', methods=['POST'])
+    @FC().route('/<region>/getQWCData.spd', methods=['POST'])
     @des_api()
     def getQWCData(region):
         self = Server()
         characterID = self.players[request.remote_addr]
         return self.PlayerManager.handle_getQWCData(request.args, characterID)
     
-    @FC().f.route('/<region>/addQWCData.spd', methods=['POST'])
+    @FC().route('/<region>/addQWCData.spd', methods=['POST'])
     @des_api()
     def addQWCData(region):
         return 0x09, "\x01"
     
-    @FC().f.route('/<region>/getMultiPlayGrade.spd', methods=['POST'])
+    @FC().route('/<region>/getMultiPlayGrade.spd', methods=['POST'])
     @des_api()
     def getMultiPlayGrade(region):
         self = Server()
         return self.PlayerManager.handle_getMultiPlayGrade(request.args)
     
-    @FC().f.route('/<region>/getBloodMessageGrade.spd', methods=['POST'])
+    @FC().route('/<region>/getBloodMessageGrade.spd', methods=['POST'])
     @des_api()
     def getBloodMessageGrade(region):
         self = Server()
         return self.PlayerManager.handle_getBloodMessageGrade(request.args)
     
-    @FC().f.route('/<region>/getTimeMessage.spd', methods=['POST'])
+    @FC().route('/<region>/getTimeMessage.spd', methods=['POST'])
     @des_api()
     def getTimeMessage(region):
         # first byte
@@ -144,97 +142,97 @@ class Server:
 
         return 0x22, "\x00\x00\x00"
     
-    @FC().f.route('/<region>/getAgreement.spd', methods=['POST'])
-    @FC().f.route('/<region>/addNewAccount.spd', methods=['POST'])
+    @FC().route('/<region>/getAgreement.spd', methods=['POST'])
+    @FC().route('/<region>/addNewAccount.spd', methods=['POST'])
     @des_api()
     def getUnusedEndpoint(region):
         return 0x01, "\x01\x01Hello!!\r\n\x00"
     
-    @FC().f.route('/<region>/getBloodMessage.spd', methods=['POST'])
+    @FC().route('/<region>/getBloodMessage.spd', methods=['POST'])
     @des_api()
     def getBloodMessage(region):
         self = Server()
         return self.MessageManager.handle_getBloodMessage(request.args)
     
-    @FC().f.route('/<region>/addBloodMessage.spd', methods=['POST'])
+    @FC().route('/<region>/addBloodMessage.spd', methods=['POST'])
     @des_api()
     def addBloodMessage(region):
         self = Server()
         cmd, data, custom_command = self.MessageManager.handle_addBloodMessage(request.args)
         return cmd, data
     
-    @FC().f.route('/<region>/updateBloodMessageGrade.spd', methods=['POST'])
+    @FC().route('/<region>/updateBloodMessageGrade.spd', methods=['POST'])
     @des_api()
     def updateBloodMessageGrade(region):         
         self = Server()
         return self.MessageManager.handle_updateBloodMessageGrade(request.args, self)
     
-    @FC().f.route('/<region>/deleteBloodMessage.spd', methods=['POST'])
+    @FC().route('/<region>/deleteBloodMessage.spd', methods=['POST'])
     @des_api()
     def deleteBloodMessage(region):
         self = Server()
         return self.MessageManager.handle_deleteBloodMessage(request.args)
         
-    @FC().f.route('/<region>/getReplayList.spd', methods=['POST'])
+    @FC().route('/<region>/getReplayList.spd', methods=['POST'])
     @des_api()
     def getReplayList(region):
         self = Server()
         return self.ReplayManager.handle_getReplayList(request.args)
     
-    @FC().f.route('/<region>/getReplayData.spd', methods=['POST'])
+    @FC().route('/<region>/getReplayData.spd', methods=['POST'])
     @des_api()
     def getReplayData(region):
         self = Server()
         return self.ReplayManager.handle_getReplayData(request.args)
     
-    @FC().f.route('/<region>/addReplayData.spd', methods=['POST'])
+    @FC().route('/<region>/addReplayData.spd', methods=['POST'])
     @des_api()
     def addReplayData(region):
         self = Server()
         return self.ReplayManager.handle_addReplayData(request.args)
     
-    @FC().f.route('/<region>/getWanderingGhost.spd', methods=['POST'])
+    @FC().route('/<region>/getWanderingGhost.spd', methods=['POST'])
     @des_api()
     def getWanderingGhost(region):
         self = Server()
         return self.GhostManager.handle_getWanderingGhost(request.args)
     
-    @FC().f.route('/<region>/setWanderingGhost.spd', methods=['POST'])
+    @FC().route('/<region>/setWanderingGhost.spd', methods=['POST'])
     @des_api()
     def setWanderingGhost(region):
         self = Server()
         serverport = SERVER_TO_PORT[region]
         return self.GhostManager.handle_setWanderingGhost(request.args, serverport)
     
-    @FC().f.route('/<region>/getSosData.spd', methods=['POST'])
+    @FC().route('/<region>/getSosData.spd', methods=['POST'])
     @des_api()
     def getSosData(region):              
         self = Server()
         serverport = SERVER_TO_PORT[region]
         return self.SOSManager.handle_getSosData(request.args, serverport)
     
-    @FC().f.route('/<region>/addSosData.spd', methods=['POST'])
+    @FC().route('/<region>/addSosData.spd', methods=['POST'])
     @des_api()
     def addSosData(region):              
         self = Server()
         serverport = SERVER_TO_PORT[region]
         return self.SOSManager.handle_addSosData(request.args, serverport, self)
     
-    @FC().f.route('/<region>/checkSosData.spd', methods=['POST'])
+    @FC().route('/<region>/checkSosData.spd', methods=['POST'])
     @des_api()
     def checkSosData(region):              
         self = Server()
         serverport = SERVER_TO_PORT[region]
         return self.SOSManager.handle_checkSosData(request.args, serverport)
     
-    @FC().f.route('/<region>/outOfBlock.spd', methods=['POST'])
+    @FC().route('/<region>/outOfBlock.spd', methods=['POST'])
     @des_api()
     def outOfBlock(region):              
         self = Server()
         serverport = SERVER_TO_PORT[region]
         return self.SOSManager.handle_outOfBlock(request.args, serverport)
     
-    @FC().f.route('/<region>/summonOtherCharacter.spd', methods=['POST'])
+    @FC().route('/<region>/summonOtherCharacter.spd', methods=['POST'])
     @des_api()
     def summonOtherCharacter(region):              
         self = Server()
@@ -242,7 +240,7 @@ class Server:
         characterID = self.players[request.remote_addr]
         return self.SOSManager.handle_summonOtherCharacter(request.args, serverport, characterID)
     
-    @FC().f.route('/<region>/summonBlackGhost.spd', methods=['POST'])
+    @FC().route('/<region>/summonBlackGhost.spd', methods=['POST'])
     @des_api()
     def summonBlackGhost(region):              
         self = Server()
@@ -250,19 +248,19 @@ class Server:
         characterID = self.players[request.remote_addr]
         return self.SOSManager.handle_summonBlackGhost(request.args, serverport, characterID)
     
-    @FC().f.route('/<region>/initializeMultiPlay.spd', methods=['POST'])
+    @FC().route('/<region>/initializeMultiPlay.spd', methods=['POST'])
     @des_api()
     def initializeMultiPlay(region):              
         self = Server()
         return self.PlayerManager.handle_initializeMultiPlay(request.args)
     
-    @FC().f.route('/<region>/finalizeMultiPlay.spd', methods=['POST'])
+    @FC().route('/<region>/finalizeMultiPlay.spd', methods=['POST'])
     @des_api()
     def finalizeMultiPlay(region):              
         self = Server()
         return self.PlayerManager.handle_finalizeMultiPlay(request.args)
     
-    @FC().f.route('/<region>/updateOtherPlayerGrade.spd', methods=['POST'])
+    @FC().route('/<region>/updateOtherPlayerGrade.spd', methods=['POST'])
     @des_api()
     def updateOtherPlayerGrade(region):              
         self = Server()

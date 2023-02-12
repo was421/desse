@@ -1,5 +1,7 @@
 import logging
+from core.FlaskContainer import FlaskContainer
 from core.Config import Config
+from core.WebUI import WebUI
 from core.Server import Server
 from core.DNS import DNS
 
@@ -28,7 +30,6 @@ if __name__ == '__main__':
 
     if(Config().get_flag("local_dns_server")):
         local_dns = DNS()
-        
-    info_ss = Config().get_conf_dict("INFO_SS")
+    webui = WebUI()
     server = Server()
-    server.start(info_ss.get("port"))
+    FlaskContainer(GetInstance=True).start_blocking(Config().get_server_port())

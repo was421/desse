@@ -2,6 +2,8 @@ import json, logging
 
 class Config:
     CONFIG_FILE_NAME:str = "des_emu_config.json"
+    #it needs to hard coded to this port b/c the game only looks there
+    _server_port:int = 18000
     _conf:dict
     _info_ss:bytes = None
     
@@ -42,10 +44,12 @@ class Config:
         logging.warning(f"Requested config dict {dict_name} does not exist, returning None: {e}")
         return None
     
+    def get_server_port(self) -> int:
+        return self._server_port
+    
     def get_info_ss(self) -> bytes:
         ss_conf = self.get_conf_dict("INFO_SS")
         iss_ip:str = ss_conf.get("ip")
-        iss_port:str = str(ss_conf.get("port"))
         if(self._info_ss is None):
             self._info_ss = b"""
             <ss>0</ss>
@@ -59,16 +63,16 @@ class Config:
             <lang8></lang8>
             <lang11></lang11>
             <lang12></lang12>
-            <gameurl1>http://?PublicIP?:?PublicPort?/us/</gameurl1>
-            <gameurl2>http://?PublicIP?:?PublicPort?/eu/</gameurl2>
-            <gameurl3>http://?PublicIP?:?PublicPort?/jp/</gameurl3>
-            <gameurl4>http://?PublicIP?:?PublicPort?/jp/</gameurl4>
-            <gameurl5>http://?PublicIP?:?PublicPort?/eu/</gameurl5>
-            <gameurl6>http://?PublicIP?:?PublicPort?/eu/</gameurl6>
-            <gameurl7>http://?PublicIP?:?PublicPort?/eu/</gameurl7>
-            <gameurl8>http://?PublicIP?:?PublicPort?/eu/</gameurl8>
-            <gameurl11>http://?PublicIP?:?PublicPort?/jp/</gameurl11>
-            <gameurl12>http://?PublicIP?:?PublicPort?/jp/</gameurl12>
+            <gameurl1>http://?PublicIP?:18000/us/</gameurl1>
+            <gameurl2>http://?PublicIP?:18000/eu/</gameurl2>
+            <gameurl3>http://?PublicIP?:18000/jp/</gameurl3>
+            <gameurl4>http://?PublicIP?:18000/jp/</gameurl4>
+            <gameurl5>http://?PublicIP?:18000/eu/</gameurl5>
+            <gameurl6>http://?PublicIP?:18000/eu/</gameurl6>
+            <gameurl7>http://?PublicIP?:18000/eu/</gameurl7>
+            <gameurl8>http://?PublicIP?:18000/eu/</gameurl8>
+            <gameurl11>http://?PublicIP?:18000/jp/</gameurl11>
+            <gameurl12>http://?PublicIP?:18000/jp/</gameurl12>
             <browserurl1></browserurl1>
             <browserurl2></browserurl2>
             <browserurl3></browserurl3>
@@ -87,5 +91,5 @@ class Config:
             <getBloodMessageNum>80</getBloodMessageNum>
             <getReplayListNum>80</getReplayListNum>
             <enableWanderingGhost>1</enableWanderingGhost>
-            """.replace(b"?PublicIP?",iss_ip.encode()).replace(b"?PublicPort?",iss_port.encode())
+            """.replace(b"?PublicIP?",iss_ip.encode())
         return self._info_ss
