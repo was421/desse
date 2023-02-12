@@ -13,7 +13,7 @@ from emu.SOSManager import *
 from emu.Util import *
     
 class Server:
-    name:str = "BACON"
+    
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             cls.instance = super(Server, cls).__new__(cls)
