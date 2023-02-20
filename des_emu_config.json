@@ -1,15 +1,14 @@
 {
   "local_dns_server": true,
-  "packet_logging": true,
-  "TEXT":{
-    "motd":"Welcome to Church Guard's test server!\r\nThis is a temporary server, it will\r\neventually be shut down.\r\n\r\nsource code:\r\nhttps://github.com/was421/desse\r\n"
-  },
+  "packet_logging": false,
+  "enable_webui":true,
+  "automatic_ip_config":false,
   "LOGGING": {
     "log_level": "DEBUG",
     "log_file": "emulator.log"
   },
   "INFO_SS": {
-    "ip": "127.0.0.1"
+    "ip": "0.0.0.0"
   },
   "DNS": {
     "port":53,
@@ -18,39 +17,37 @@
       {
         "host": "ds-eu-c.scej-online.jp",
         "type": "A",
-        "ip": "127.0.0.1"
+        "ip": "0.0.0.0"
       },
       {
         "host": "ds-eu-g.scej-online.jp",
         "type": "A",
-        "ip": "127.0.0.1"
+        "ip": "0.0.0.0"
       },
       {
         "host": "c.demons-souls.com",
         "type": "A",
-        "ip": "127.0.0.1"
+        "ip": "0.0.0.0"
       },
       {
         "host": "g.demons-souls.com",
         "type": "A",
-        "ip": "127.0.0.1"
+        "ip": "0.0.0.0"
       },
       {
         "host": "cmnap.scej-online.jp",
         "type": "A",
-        "ip": "127.0.0.1"
+        "ip": "0.0.0.0"
       },
       {
         "host": "demons-souls.scej-online.jp",
         "type": "A",
-        "ip": "127.0.0.1"
+        "ip": "0.0.0.0"
       }
     ]
   },
   "SQLite": {
-    "messages_db_path": "db/messages.sqlite",
-    "replays_db_path": "db/replays.sqlite",
-    "players_db_path": "db/players.sqlite",
     "admin_db_path": "db/admin.sqlite"
-  }
+  },
+  "is_devmode":true
 }

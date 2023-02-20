@@ -1,4 +1,4 @@
-import base64, traceback, logging, zlib, io, struct, json, logging
+import base64, traceback, logging, zlib, io, struct, json, logging, sys
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes 
 
@@ -6,8 +6,10 @@ SERVER_PORT_BOOTSTRAP = 18000
 SERVER_PORT_US = 18666
 SERVER_PORT_EU = 18667
 SERVER_PORT_JP = 18668
-
-SERVER_TO_PORT = {'us':SERVER_PORT_US,'eu':SERVER_PORT_EU,'jp':SERVER_PORT_JP}
+US_REGION = 'us'
+EU_REGION = 'eu'
+JP_REGION = 'jp'
+REGION_TO_PORT = {US_REGION:SERVER_PORT_US,EU_REGION:SERVER_PORT_EU,JP_REGION:SERVER_PORT_JP}
 
 LEGACY_MESSAGE_THRESHOLD = 5
 LEGACY_REPLAY_THRESHOLD = 5
@@ -33,12 +35,15 @@ def make_signed(n:int) -> int:
     else:
         return n
         
-def decrypt(ct) -> bytes:
-    cipher = Cipher(algorithms.AES(b"11111111222222223333333344444444"),modes.CBC(bytes(ct[0:16])))
-    decryptor = cipher.decryptor()
-    pt = decryptor.update(bytes(ct[16:])) + decryptor.finalize()
-    #pt = pt[:-ord(pt[-1])]
-    return pt
+def decrypt(ct) -> bytes | None:
+    try:
+        cipher = Cipher(algorithms.AES(b"11111111222222223333333344444444"),modes.CBC(bytes(ct[0:16])))
+        decryptor = cipher.decryptor()
+        pt = decryptor.update(bytes(ct[16:])) + decryptor.finalize()
+        #pt = pt[:-ord(pt[-1])]
+        return pt
+    except:
+        return None
 
 def get_params(data:bytes) -> dict[str,str]:
     params = {}
@@ -84,29 +89,54 @@ def readcstring(sio:io.BytesIO) -> str:
         res += c
     return res.decode()
 
-def validate_replayData(replayData):
+def convert_to_bytearray(obj:bytes | str | bytearray) -> bytearray | None:
     try:
-        z = zlib.decompressobj()
-        data = z.decompress(replayData)
-        assert z.unconsumed_tail == b""
-        
-        sio = io.BytesIO(data)
-        
-        poscount, num1, num2 = struct.unpack(">III", sio.read(12))
-        for i in range(poscount):
-            posx, posy, posz, angx, angy, angz, num3, num4 = struct.unpack(">ffffffII", sio.read(32))
-            
-        unknowns = struct.unpack(">iiiiiiiiiiiiiiiiiiii", sio.read(4 * 20))
-        playername = sio.read(34).decode("utf-16be").rstrip("\x00")
-        assert sio.read() == "".encode()
-        
-        return True
-        
+        ret = bytearray(obj)
     except:
-        tb = traceback.format_exc()
-        logging.warning("bad ghost/replay data %r %r\n%s" % (replayData, data, tb))
-        return False
+        try:
+            ret = bytearray(obj,"UTF-8")
+        except:
+            ret = None
+    return ret
 
 
+def validate_replayData(replayData):
+        try:
+            z = zlib.decompressobj()
+            data = z.decompress(replayData)
+            assert z.unconsumed_tail == b""
+            
+            sio = io.BytesIO(data)
+            
+            poscount, num1, num2 = struct.unpack(">III", sio.read(12))
+            for i in range(poscount):
+                posx, posy, posz, angx, angy, angz, num3, num4 = struct.unpack(">ffffffII", sio.read(32))
+                
+            unknowns = struct.unpack(">iiiiiiiiiiiiiiiiiiii", sio.read(4 * 20))
+            playername = sio.read(34).decode("utf-16be").rstrip("\x00")
+            assert sio.read() == "".encode()
+            
+            return True
+            
+        except:
+            tb = traceback.format_exc()
+            logging.warning("bad ghost/replay data %r %r\n%s" % (replayData, data, tb))
+            return False
+
+currentFuncName = lambda n=0: sys._getframe(n + 1).f_code.co_name
+
+def not_implemented():
+    depth = 1
+    trace = []
+    try:
+        while True:
+            trace.append(currentFuncName(depth))
+            depth += 1
+            if(trace[-1] == '__des_api'):
+                break
+    except:
+        pass
+    logging.error("Not Implemented " + " -> ".join(trace))
+    
 BLOCK_NAMES:dict[int,str] = load_static_data("data/blocknames.json")
 MESSAGE_IDS:dict[int,str] = load_static_data("data/messageids.json")

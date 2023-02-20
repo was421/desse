@@ -78,6 +78,7 @@ celerybeat-schedule
 .env
 
 # virtualenv
+.venv/
 venv/
 ENV/
 
@@ -140,3 +141,9 @@ $RECYCLE.BIN/
 
 #sqllite files
 *.sqlite
+
+#bak files
+*.bak
+
+#old files
+.emu/
