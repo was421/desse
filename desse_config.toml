@@ -1,0 +1,74 @@
+#
+[DESSE_FLAG]
+SERVER = true
+STATUS_SERVER = true
+DNS_SERVER =  true
+WEBUI = true
+ADMINUI = true
+AUTOMATIC_IP_CONFIG = false
+PACKET_LOGGING =  false
+IS_DEVMODE = true
+
+[LOGGING]
+LOG_LEVEL =  "DEBUG"
+LOG_FILE =  "emulator.log"
+
+[SERVER]
+#This IP address should be the public IP of this server, if AUTOMATIC_IP_CONFIG is true then this value is not used
+IP =  "172.25.1.146"
+#This port should always be 18000 unless you are doing an advanced setup
+PORT = 18000
+
+#The status server is part of the DeS connection flow and is used by the game
+#to dicover where the "real" game servers are a long with other misc info
+#as shuch the information here should point to the real server configured
+#above
+[STATUS_SERVER]
+#This IP address should be the public IP of the server, if AUTOMATIC_IP_CONFIG is true then this value is not used
+IP =  "172.25.1.146"
+#This port is what the should normally be 18000 unless you are doing an advanced setup
+PORT = 18000
+
+#
+[DNS_SERVER]
+PORT = 53
+FAILOVER = "1.1.1.1"
+
+[WEBUI]
+ISOLATE = false
+PORT = 80
+[WEBUI.ADMIN]
+ISOLATE = false
+PORT = 80
+USER = "Admin"
+#if the password is blank it will be randomly generated and logged to console as an ERROR message
+PASS = ""
+
+[[DNS_SERVER.RECORDS]]
+HOST =  "ds-eu-c.scej-online.jp"
+TYPE =  "A"
+IP =  "172.25.1.146"
+[[DNS_SERVER.RECORDS]]
+HOST =  "ds-eu-g.scej-online.jp"
+TYPE =  "A"
+IP =  "172.25.1.146"
+[[DNS_SERVER.RECORDS]]
+HOST =  "c.demons-souls.com"
+TYPE =  "A"
+IP =  "172.25.1.146"
+[[DNS_SERVER.RECORDS]]
+HOST =  "g.demons-souls.com"
+TYPE =  "A"
+IP =  "172.25.1.146"
+[[DNS_SERVER.RECORDS]]
+HOST =  "cmnap.scej-online.jp"
+TYPE =  "A"
+IP =  "172.25.1.146"
+[[DNS_SERVER.RECORDS]]
+HOST =  "demons-souls.scej-online.jp"
+TYPE =  "A"
+IP =  "172.25.1.146"
+
+[SQLITE]
+ADMIN_DB_PATH =  "db/admin.sqlite"
+

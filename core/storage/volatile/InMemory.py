@@ -1,5 +1,5 @@
 from core.storage.StorageModel import StorageModel
-from core.storage.Types import Replay,SOSData,Player,Message,Ghost
+from core.storage.Types import Replay,SOSData,Player,Message,Ghost,ActiveConnection
 from core.Util import *
 
 class InMemory(StorageModel):
@@ -14,6 +14,10 @@ class InMemory(StorageModel):
         
         #Ghost-----------------------------------------------------------------
         self._ghost:dict[str:Ghost] = {}
+        #----------------------------------------------------------------------
+        
+        #ActiveConnection------------------------------------------------------
+        self._active_connection:dict[str:ActiveConnection] = {}
         #----------------------------------------------------------------------
         
         
@@ -35,27 +39,26 @@ class InMemory(StorageModel):
         return index
     
     def sos_store(self,region:str,sos_data:SOSData):
-        if not hasattr(self._sos,region):
+        if self._sos.get(region) is None:
             self._sos[region] = {}
         self._sos[region][sos_data.characterID] = sos_data
     
     def sos_remove(self,region:str,characterID:str):
-        if not hasattr(self._sos,region):
+        if self._sos.get(region) is None:
             self._sos[region] = {}
-        del self._sos[region][characterID]
+        if self._sos[region].get(characterID) is not None:
+            del self._sos[region][characterID]
     
     def sos_fetch(self,region:str,characterID:str) -> SOSData | None:
-        if not hasattr(self._sos,region):
+        if self._sos.get(region) is None:
             self._sos[region] = {}
-        if not hasattr(self._sos[region],characterID):
-            return None
-        return self._sos[region][characterID]
+        return self._sos[region].get(characterID)
     
     def sos_fetch_all_in_region(self,region:str) -> list[SOSData]:
         res:list[SOSData] = []
-        if not hasattr(self._sos,region):
+        if(self._sos.get(region) is None):
             self._sos[region] = {}
-        for npid,sos in self._sos[region].values():
+        for sos in self._sos[region].values():
             res.append(sos)
         return res
             
@@ -67,7 +70,7 @@ class InMemory(StorageModel):
         return self._sos_pending_player.get(characterID)
     
     def sos_remove_pending_player(self,characterID:str):
-        if(hasattr(self._sos_pending_player,characterID)):
+        if self._sos_pending_player.get(characterID) is not None:
             del self._sos_pending_player[characterID]
     
     def sos_store_pending_player(self,characterID:str,nproomid:str):
@@ -75,23 +78,23 @@ class InMemory(StorageModel):
     
     #Monk
     def sos_fetch_pending_monk_num(self,region:str) -> int:
-        if not hasattr(self._sos_pending_monk,region):
+        if self._sos_pending_monk.get(region) is None:
             self._sos_pending_monk[region] = {}
         return len(self._sos_pending_monk[region])
     
     def sos_fetch_pending_monk(self,region:str,characterID:str) -> str | None: #returns NPRoomID
-        if not hasattr(self._sos_pending_monk,region):
+        if self._sos_pending_monk.get(region) is None:
             self._sos_pending_monk[region] = {}
         return self._sos_pending_monk[region].get(characterID)
     
     def sos_remove_pending_monk(self,region:str,characterID:str):
-        if not hasattr(self._sos_pending_monk,region):
+        if self._sos_pending_monk.get(region) is None:
             self._sos_pending_monk[region] = {}
-        if hasattr(self._sos_pending_monk[region],characterID):
+        if self._sos_pending_monk[region].get(characterID) is not None:
             del self._sos_pending_monk[region][characterID]
     
     def sos_store_pending_monk(self,region:str,characterID:str,nproomid:str):
-        if not hasattr(self._sos_pending_monk,region):
+        if self._sos_pending_monk.get(region) is None:
             self._sos_pending_monk[region] = {}
         self._sos_pending_monk[region][characterID] = nproomid
     #--------------------------------------------------------------------------
@@ -126,12 +129,25 @@ class InMemory(StorageModel):
         self._ghost[ghost.characterID] = ghost
     
     def ghost_remove(self,characterID:str):
-        del self._ghost[characterID]
+        if self._ghost.get(characterID):
+            del self._ghost[characterID]
         
     def ghost_fetch_all(self) -> list[Ghost]:
-        res:list[Ghost] = []
-        for ghost in self._ghost.values():
-            res.append(ghost)
-        return res
+        return list(self._ghost.values())
             
+    #--------------------------------------------------------------------------
+    
+    #ActiveConnection-Normally Volatile----------------------------------------
+    def active_connection_store(self,active_connection:ActiveConnection):
+        self._active_connection[active_connection._connection_uuid4] = active_connection
+    
+    def active_connection_fetch(self,uuid4:str) -> ActiveConnection | None:
+        return self._active_connection.get(uuid4)
+    
+    def active_connection_remove(self,uuid4:str):
+        if self._active_connection.get(uuid4) is not None:
+            del self._active_connection[uuid4]
+    
+    def active_connection_fetch_all(self) -> list[ActiveConnection]:
+        return list(self._active_connection.values())
     #--------------------------------------------------------------------------

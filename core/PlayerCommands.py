@@ -12,7 +12,7 @@ class PlayerCommands:
         pass
     
     def injest_message(self,msg:Message) -> bool:
-        return True
+        return False
     
     def register_command(self,todo):
         pass

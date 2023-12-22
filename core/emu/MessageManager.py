@@ -48,9 +48,13 @@ class MessageManager(object):
         msg = Message()
         msg.from_params(params, None)
         
+        #commands are never result in stored messages
         if PlayerCommands().injest_message(msg):
-            msg.bmID = SC().persistent.message_store(msg)
-            logging.info("Added new message %s" % str(msg))
+            return 0x1d, "\x01"
+            
+        #this only runs if the above was not a command, so most of the time 
+        msg.bmID = SC().persistent.message_store(msg)
+        logging.info("Added new message %s" % str(msg))
             
         return 0x1d, "\x01"
         

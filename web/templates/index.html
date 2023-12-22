@@ -6,103 +6,45 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>DeSSE Admin</title>
-        <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" />
-        <link href="{{ url_for('static', filename='css/styles.css')  }}" rel="stylesheet" />
+        <title>Demon's Souls Server Emulator</title>
+        <link href="{{ url_for('FrontEnd.static', filename='css/styles.css')  }}" rel="stylesheet" />
+        <link href="{{ url_for('FrontEnd.static', filename='css/des.css')  }}" rel="stylesheet" />
         <script src="https://use.fontawesome.com/releases/v6.1.0/js/all.js" crossorigin="anonymous"></script>
     </head>
-    <body class="sb-nav-fixed">
-        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-            <!-- Navbar Brand-->
-            <a class="navbar-brand ps-3" href="/">DeSSE Admin</a>
-            <!-- Sidebar Toggle-->
-            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
-            <!-- Navbar-->
-        </nav>
-        <div id="layoutSidenav">
-            <div id="layoutSidenav_nav">
-                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
-                    <div class="sb-sidenav-menu">
-                        <div class="nav">
-                            <div class="sb-sidenav-menu-heading">Core</div>
-                            <a class="nav-link" href="/">
-                                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                Dashboard
-                            </a>
-                            <div class="sb-sidenav-menu-heading">Server</div>
-                            <a class="nav-link" href="/motd">
-                                <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
-                                Message Of The Day
-                            </a>
-                            <a class="nav-link" href="/player_management">
-                                <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
-                                Player Management
-                            </a>
-                        </div>
+    <body class="bg-dark">
+        <div>
+            <nav>
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <h3 class="invert-text text-center font-weight-light my-2">Demon's Souls Server Emulator</h3>
                     </div>
-                    <div class="sb-sidenav-footer">
-                        <div class="small">Check out the repo:</div>
-                        <a href="https://github.com/was421/desse/">github.com/was421/desse/</a>
-                    </div>
-                </nav>
-            </div>
-            <div id="layoutSidenav_content">
+                </div>
+            </nav>
+            <div>
                 <main>
-                    <div class="container-fluid px-4">
-                        <h1 class="mt-4">Dashboard</h1>
-                        <ol class="breadcrumb mb-4">
-                            <li class="breadcrumb-item active">Dashboard</li>
-                        </ol>
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <i class="fas fa-table me-1"></i>
-                                All Players
-                            </div>
-                            <div class="card-body">
-                                <table id="datatablesSimple">
-                                    <thead>
-                                        <tr>
-                                            {% for player_data_header in player_data_headers %}
-                                                <th>{{player_data_header}}</th>
-                                            {% endfor %}
-                                        </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            {% for player_data_header in player_data_headers %}
-                                                <th>{{player_data_header}}</th>
-                                            {% endfor %}
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                        {% for player in players %}
-                                        <tr>
-                                            {% for player_data_element in player%}
-                                                <td>{{ player_data_element }}</td>
-                                            {% endfor%}
-                                        </tr>
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-auto">
+                                <div class="card shadow-lg border-0 rounded-lg mt-2">
+                                    <div class="card-body">
+                                        <a>Current players online: {{ players.total_players }}</a><br>
+                                        {% for region, count in  players.regiontotal.items() %}
+                                        <a>{{ region.upper() }} {{ count }} </a>
                                         {% endfor %}
-                                    </tbody>
-                                </table>
+                                        <br>
+                                        <a>Popular areas:<a><br>
+                                        {% for count, blockID in players.blockslist[::-1][0:5] %}
+                                            <a>{{ count }} {{ STATIC.BLOCK_NAMES[blockID] }}</a><br>
+                                        {% endfor %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </main>
-                <footer class="py-4 bg-light mt-auto">
-                    <div class="container-fluid px-4">
-                        <div class="d-flex align-items-center justify-content-between small">
-                            <div class="text-muted">This is the good Demon's Souls</div>
-                        </div>
-                    </div>
-                </footer>
+                    </main>
+                </div>
             </div>
         </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-        <script src="{{ url_for('static', filename='js/scripts.js')  }}"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
-        <script src="{{ url_for('static', filename='assets/demo/chart-area-demo.js')  }}"></script>
-        <script src="{{ url_for('static', filename='assets/demo/chart-bar-demo.js')  }}"></script>
-        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" crossorigin="anonymous"></script>
-        <script src="{{ url_for('static', filename='js/datatables-simple-demo.js')  }}"></script>
+        <script src="{{ url_for('FrontEnd.static', filename='js/scripts.js')  }}"></script>
     </body>
 </html>

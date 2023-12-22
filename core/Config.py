@@ -1,14 +1,14 @@
-import json, logging, socket, urllib.request, uuid
+import tomllib, logging, socket, urllib.request, os, traceback
 
 class Config:
-    CONFIG_FILE_NAME:str = "des_emu_config.json"
-    #it needs to hard coded to this port b/c the game only looks there
-    _server_port:int = 18000
+    CONFIG_FILE_NAME:str = "desse_config.toml"
     _conf:dict
-    _info_ss:bytes = None
-    _info_ss_local:bytes = None
-    _local_ip:str = ""
-    _public_ip:str = ""
+    _STATUS_SERVER:bytes = None
+    _STATUS_SERVER_local:bytes = None
+    _local_ip:str = None
+    _public_ip:str = None
+    _server_ip:str = None
+    _server_port:int = None
     
     def __new__(cls):
         if not hasattr(cls, 'instance'):
@@ -18,29 +18,60 @@ class Config:
     
     def _setup(self):
         try:
-            config_file = open(self.CONFIG_FILE_NAME,"r").read()
-            self._conf = json.loads(config_file)
+            try:
+                file = open(self.CONFIG_FILE_NAME,"r")
+                config_file = file.read()
+                file.close()
+                self._conf = tomllib.loads(config_file)
+            except:
+                pass
             
-            #this does not work on all machines
-            self._local_ip = socket.gethostbyname(socket.gethostname())
+            self._map_environment()
             
-            #self._public_ip = urllib.request.urlopen('http://ident.me').read().decode('utf8')
-            #this takes more work but i trust cloudflare more than whomever owns ident.me
-            ret:str = urllib.request.urlopen('http://cloudflare.com/cdn-cgi/trace').read().decode('utf8')
-            res:dict = {}
-            for kv in ret.split('\n'):
-                pair = kv.split('=')
-                if len(pair) == 2:
-                    res[pair[0]] = pair[1]
-            self._public_ip = res.get('ip')
         except Exception as e:
-            logging.error(f"Cannot Load Config: {e}")
-         
+            logging.error(f"Cannot Load Config: {e}:{traceback.format_exc()}")
+    
+    def _string_to_key_dict(self,string:str) -> dict:
+        if '..' in string:
+            split = string.split('..')
+            self._string_to_key_dict(''.join(split[1::]))
+            string = split[0]
+        key_depth = string.split('.')
+        print(key_depth)
+        frame = self._conf
+        for k in key_depth[:-1]:
+            if not isinstance(frame,dict):
+                frame = {}
+            if not isinstance(frame.get(k),dict):
+                frame[k] = {}
+            frame = frame[k]
+        frame[key_depth[-1]] = 0
+                
+    def _map_environment(self):
+        try:
+            for key, value in os.environ.items():
+                if '.' in key:
+                    print(key)
+                    key_depth = key.split('.')
+                    print(key_depth)
+                    frame = self._conf
+                    for k in key_depth[:-1]:
+                        if not isinstance(frame,dict):
+                            frame = {}
+                        if not isinstance(frame.get(k),dict):
+                            frame[k] = {}
+                        frame = frame[k]
+                    frame[key_depth[-1]] = value    
+                    
+                    print("CONF -> ",self._conf[key_depth[0]])
+        except Exception as e:
+            logging.error(f"Env -> Dict: {e}:{traceback.format_exc()}")
+       
     def get_flag(self,flag_name:str)->bool:
-        value = self._conf.get(flag_name)
+        value:dict = self.get_conf_dict("DESSE_FLAG")
         if(value is not None):
             try:
-                ret = bool(value)
+                ret = bool(value.get(flag_name))
                 return ret
             except Exception as e:
                 logging.warning(f"Requested flag {flag_name} isn't boolean, returning false: {e}")
@@ -64,7 +95,7 @@ class Config:
         log_conf = self.get_conf_dict("LOGGING")
         level = logging.NOTSET
 
-        match(log_conf.get("log_level")):
+        match(log_conf.get("LOG_LEVEL")):
             case "DEBUG":
                 level = logging.DEBUG
             case "INFO":
@@ -74,72 +105,38 @@ class Config:
             case "ERROR":
                 level = logging.ERROR
         
-        return level,log_conf.get("log_file")
+        return level,log_conf.get("LOG_FILE")
         
-    def get_server_local_ip(self)->str:
+    def get_local_ip(self)->str:
+        if(self._local_ip is None):
+            #this does not work on all machines
+            self._local_ip = socket.gethostbyname(socket.gethostname())
         return self._local_ip
     
-    def get_server_public_ip(self)->str:
+    def get_public_ip(self)->str:
+        if(self._public_ip is None):
+            #self._public_ip = urllib.request.urlopen('http://ident.me').read().decode('utf8')
+            #this takes more work but i trust cloudflare more than whomever owns ident.me
+            ret:str = urllib.request.urlopen('http://cloudflare.com/cdn-cgi/trace').read().decode('utf8')
+            res:dict = {}
+            for kv in ret.split('\n'):
+                pair = kv.split('=')
+                if len(pair) == 2:
+                    res[pair[0]] = pair[1]
+            self._public_ip = res.get('ip')
         return self._public_ip      
     
-    def get_server_port(self) -> int:
-        return self._server_port
-    
-    def get_info_ss(self,uuid4:str,local:bool = False) -> bytes:
-
-        if(self._info_ss is None):
-            if self.get_flag("automatic_ip_config"):
-                public_ip = self.get_server_public_ip()
+    def get_server_ip(self)->str:
+        if self._server_ip is None:
+            if self.get_flag("AUTOMATIC_IP_CONFIG"):
+                self._server_ip = self.get_public_ip()
             else:
-                ss_conf = self.get_conf_dict("INFO_SS")
-                public_ip = ""
-                if(ss_conf is not None):
-                    public_ip = ss_conf.get("ip")
-                else:
-                    public_ip = '0.0.0.0'
-            template = b"""
-            <ss>0</ss>
-            <lang1></lang1>
-            <lang2></lang2>
-            <lang3></lang3>
-            <lang4></lang4>
-            <lang5></lang5>
-            <lang6></lang6>
-            <lang7></lang7>
-            <lang8></lang8>
-            <lang11></lang11>
-            <lang12></lang12>
-            <gameurl1>http://?ip?:18000/us/?uuid?/</gameurl1>
-            <gameurl2>http://?ip?:18000/eu/?uuid?/</gameurl2>
-            <gameurl3>http://?ip?:18000/jp/?uuid?/</gameurl3>
-            <gameurl4>http://?ip?:18000/jp/?uuid?/</gameurl4>
-            <gameurl5>http://?ip?:18000/eu/?uuid?/</gameurl5>
-            <gameurl6>http://?ip?:18000/eu/?uuid?/</gameurl6>
-            <gameurl7>http://?ip?:18000/eu/?uuid?/</gameurl7>
-            <gameurl8>http://?ip?:18000/eu/?uuid?/</gameurl8>
-            <gameurl11>http://?ip?:18000/jp/?uuid?/</gameurl11>
-            <gameurl12>http://?ip?:18000/jp/?uuid?/</gameurl12>
-            <browserurl1>http://?ip?:18000/unk_endpoint1/</browserurl1>
-            <browserurl2>http://?ip?:18000/unk_endpoint2/</browserurl2>
-            <browserurl3>http://?ip?:18000/unk_endpoint3/</browserurl3>
-            <interval1>120</interval1>
-            <interval2>120</interval2>
-            <interval3>120</interval3>
-            <interval4>120</interval4>
-            <interval5>120</interval5>
-            <interval6>120</interval6>
-            <interval7>120</interval7>
-            <interval8>120</interval8>
-            <interval11>120</interval11>
-            <interval12>120</interval12>
-            <getWanderingGhostInterval>20</getWanderingGhostInterval>
-            <setWanderingGhostInterval>20</setWanderingGhostInterval>
-            <getBloodMessageNum>80</getBloodMessageNum>
-            <getReplayListNum>80</getReplayListNum>
-            <enableWanderingGhost>1</enableWanderingGhost>
-            """
-            self._info_ss = template.replace(b"?ip?",public_ip.encode())
-            self._info_ss_local = template.replace(b"?ip?",self.get_server_local_ip().encode())
-        if local:
-            return self._info_ss_local.replace(b"?uuid?",uuid4.encode())
-        return self._info_ss.replace(b"?uuid?",uuid4.encode())
+                server_conf = self.get_conf_dict("SERVER")
+                self._server_ip = server_conf.get("IP")  
+        return self._server_ip
+    
+    def get_server_port(self) -> int:
+        if self._server_port is None:
+            server_conf = self.get_conf_dict("SERVER")
+            self._server_port = int(server_conf.get("PORT"))
+        return self._server_port

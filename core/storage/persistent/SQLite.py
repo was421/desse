@@ -1,5 +1,5 @@
 from core.storage.StorageModel import StorageModel
-from core.storage.Types import Replay,SOSData,Player,Message,Ghost
+from core.storage.Types import Replay,SOSData,Player,Message,Ghost,ActiveConnection
 from core.Util import *
 import sqlite3,struct
 
@@ -219,5 +219,19 @@ class SQLite(StorageModel):
         not_implemented()
         
     def ghost_fetch_all(self) -> list[Ghost]:
+        not_implemented()
+    #--------------------------------------------------------------------------
+    
+    #ActiveConnection-Normally Volatile----------------------------------------
+    def active_connection_store(self,active_connection:ActiveConnection):
+        not_implemented()
+    
+    def active_connection_fetch(self,uuid4:str) -> ActiveConnection | None:
+        not_implemented()
+    
+    def active_connection_remove(self,uuid4:str):
+        not_implemented()
+    
+    def active_connection_fetch_all(self) -> list[ActiveConnection]:
         not_implemented()
     #--------------------------------------------------------------------------

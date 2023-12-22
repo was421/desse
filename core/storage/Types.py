@@ -1,49 +1,38 @@
 import struct,time
+from flask_login import UserMixin
+from datetime import datetime
 from core.Util import *
 
-class ConnectionInformation(object):
-    _ip:str = ""
-    _uuid4:str = ""
-    _npid:str = ""
-    _region:str = ""
-    
-    def __init__(self, uuid4:str, npid:str = "", ip:str = "", region:str = "") -> None:
-        self._uuid4 = uuid4
-        self._npid = npid
-        self._ip = ip
-        self._region = region
-    
-    def get_uuid4(self) -> str:
-        return self._uuid4
-    
-    def set_npid(self, npid:str):
-        self._npid = npid
-        
-    def get_npid(self) -> str:
-        return self._npid
-    
-    def set_ip(self, ip:str):
-        self._ip = ip
-    
-    def get_ip(self):
-        return self._ip
-    
-    def set_region(self, region:str):
-        self._region = region
-    
-    def get_region(self):
-        return self._region
-
 class Player(object):
+    #--keys--
     characterID:str = ""
+    region:str = ""
+    #--misc data--
+    ip:str = ""
+    banned:bool = False
+    #--settings--
+    mm_password = ""
+    slmm:bool = False
+    rpcs3:bool = False
+    desired_tendency:int = 0
+    #--ratings--
     gradeS:int = 0
     gradeA:int = 0
     gradeB:int = 0
     gradeC:int = 0
     gradeD:int = 0
+    #--stored tendancy--
+    wb1:int = 0
+    wb2:int = 0
+    wb3:int = 0
+    wb4:int = 0
+    wb5:int = 0
+    wb6:int = 0
+    wb7:int = 0
+    #--stats--
     numsessions:int = 0
     messagerating:int = 0
-    desired_tendency:int = 0
+    
     
     def __init__(self, characterID:str = "") -> None:
         self.characterID = characterID
@@ -64,6 +53,9 @@ class Player(object):
     
     def get_stats(self) -> tuple[int,int,int,int,int,int]:
         return (self.gradeS,self.gradeA,self.gradeB,self.gradeC,self.gradeD,self.numsessions)
+    
+    def __repr__(self) -> str:
+        return f"Player {self.characterID}"
         
 class Replay(object):
     def __init__(self):
@@ -140,6 +132,13 @@ class SOSData(object):
         self.totalsessions:int = 123
         
         self.updatetime = time.time()
+    
+    def get_characterID(self)->str:
+        if isinstance(self.characterID,bytes):
+            return bytes(self.characterID).decode()
+        if isinstance(self.characterID,bytearray):
+            return bytes(self.characterID).decode()
+        return self.characterID
         
     def serialize(self) -> bytes:
         res:bytearray = bytearray()
@@ -210,7 +209,7 @@ class Message(object):
 
     def from_db_row(self, row):
         self.bmID, self.characterID, self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz, self.messageID, self.mainMsgID, self.addMsgCateID, self.rating, self.legacy = row
-        self.characterID = self.characterID.encode("utf8")
+        self.characterID = ensure_is_bytes(self.characterID)
         
     def to_db_row(self):
         return (self.bmID, self.characterID, self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz, self.messageID, self.mainMsgID, self.addMsgCateID, self.rating, self.legacy)
@@ -218,8 +217,7 @@ class Message(object):
     def serialize(self):
         res:bytearray = bytearray()
         res += struct.pack("<I", self.bmID)
-        if(isinstance(self.characterID,str)):
-            self.characterID = self.characterID.encode()
+        self.characterID = ensure_is_bytes(self.characterID)
         res += self.characterID + b"\x00"
         res += struct.pack("<iffffff", self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz)
         res += struct.pack("<iiii", self.messageID, self.mainMsgID, self.addMsgCateID, self.rating)
@@ -239,3 +237,61 @@ class Message(object):
             prettymessage = "%d %s %r [%d] [%d] %d" % (self.bmID, BLOCK_NAMES[self.blockID], self.characterID, self.messageID, self.mainMsgID, self.rating)
 
         return prettymessage
+
+class ActiveConnection(object):
+    _characterID:str = ""
+    _ip:str = ""
+    _connection_uuid4:str = ""
+    _region:str = ""
+    _last_seen:datetime
+    
+    def __init__(self) -> None:
+        self.update_time()
+    
+    def init_from_player_logon(self,uuid4:str,characterID:str,ip:str,region:str):
+        self._connection_uuid4 = uuid4
+        self._characterID = characterID
+        self._ip = ip
+        self._region = region
+    
+    def update_time(self):
+        self._last_seen = datetime.now()
+        
+    def get_npid(self)->str:
+        return self._characterID
+    
+ 
+class Account(UserMixin):
+    _id:str
+    _characterID:str
+    _region:str
+    _rpcs3:bool
+    _banned:bool
+    _connection_uuid4:str
+    _ip:str
+    _last_login:datetime
+    _mm_password:str
+    _slmm:bool
+    _player:Player
+    
+    def init_from_player_logon(self,uuid4:str,characterID:str,ip:str,region:str):
+        self._connection_uuid4 = uuid4
+        self._characterID = characterID
+        self._ip = ip
+        self._region = region
+    
+    def get_id(self):
+        return self._id
+    
+    def get_npid(self)->str:
+        return self._characterID
+    
+    def _as_db_tuple(self):
+        return (self._characterID,
+                self._region,
+                self._ip,
+                self._last_login,
+                int(self._banned),
+                self._mm_password,
+                int(self._slmm),
+                int(self._rpcs3))

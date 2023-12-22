@@ -1,6 +1,7 @@
 import base64, traceback, logging, zlib, io, struct, json, logging, sys
-
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes 
+from flask import Request
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from core.Config import Config
 
 SERVER_PORT_BOOTSTRAP = 18000
 SERVER_PORT_US = 18666
@@ -89,6 +90,17 @@ def readcstring(sio:io.BytesIO) -> str:
         res += c
     return res.decode()
 
+def readwidecstring(sio:io.BytesIO) -> str:
+    res:bytearray = bytearray()
+    while True:
+        c:bytes = sio.read(2)
+        assert len(c) == 2
+        if c == b"\x00\x00":
+            break
+            
+        res += c
+    return res.decode('utf-16')
+
 def convert_to_bytearray(obj:bytes | str | bytearray) -> bytearray | None:
     try:
         ret = bytearray(obj)
@@ -99,6 +111,19 @@ def convert_to_bytearray(obj:bytes | str | bytearray) -> bytearray | None:
             ret = None
     return ret
 
+
+def ensure_is_bytes(data) -> bytes:
+    if isinstance(data,str):
+        return data.encode()
+    if isinstance(data,bytes) or isinstance(data,bytearray):
+        return data
+    
+
+def ensure_is_str(data) -> str:
+    if isinstance(data,str):
+        return data
+    if isinstance(data,bytes) or isinstance(data,bytearray):
+        return data.decode()    
 
 def validate_replayData(replayData):
         try:
@@ -123,6 +148,26 @@ def validate_replayData(replayData):
             logging.warning("bad ghost/replay data %r %r\n%s" % (replayData, data, tb))
             return False
 
+
+def parse_nproomid(nproomid) -> dict:
+    dec_room = base64.b64decode(nproomid)
+    io_room = io.BytesIO(dec_room)
+    room:dict = {}
+    try:
+        room['padding'] = io_room.read(4)
+        room['magic'] = io_room.read(4).decode() #NXRV
+        room['unk'] = io_room.read(120) #no idea what this but its the same no matter what
+        room['account_name'] = readwidecstring(io_room)
+        room['account_name_again'] = readwidecstring(io_room)
+        room_id_len = int.from_bytes(io_room.read(1),'big')
+        room['room_id_len'] = room_id_len
+        room['id'] = int.from_bytes(io_room.read(room_id_len),'big')
+    except:
+        pass
+    return room
+
+    
+
 currentFuncName = lambda n=0: sys._getframe(n + 1).f_code.co_name
 
 def not_implemented():
@@ -137,6 +182,15 @@ def not_implemented():
     except:
         pass
     logging.error("Not Implemented " + " -> ".join(trace))
+
+_packet_logging = Config().get_flag("PACKET_LOGGING")
+_packet_logger = logging.getLogger(__name__)
+_packet_logger.setLevel(logging.DEBUG)
+_packet_logger.addHandler(logging.FileHandler(filename='packetlog.log'))
+def log_packet(request:Request):
+        if(_packet_logging):
+            _packet_logger.debug("%r %r",request.headers,request.get_data())
+        pass
     
 BLOCK_NAMES:dict[int,str] = load_static_data("data/blocknames.json")
 MESSAGE_IDS:dict[int,str] = load_static_data("data/messageids.json")

@@ -1,32 +1,68 @@
-A very very quick and dirty python3 port of desse; It's not done yet but soon:tm:
+# DeSSE - Demon's Souls Server Emulator
 
-DeSSE - Demon's Souls Server Emulator
+  A port of the [original desse](https://github.com/ymgve/desse) to modern python
 
-This is a very quick and dirty server emulator that supports the most basic features.
-Working at the moment:
+## Overview
 
- - matchmaking (only internally in each region, EU/US/JP people won't see each other's summon signs for example)
- - messages, pre-seeded with some old EU messages, but new messages have priority
- - ghosts
- - bloodstains, pre-seeded with some old EU stains, new stains have priority
- 
-The matchmaking only works by virtue of Sony's matchmaking servers being online. I don't know
-if these servers are generic and will continue working in the future or if they might
-be turned off at some point. It works right now, at least.
- 
-Requirements:
+Based upon the original work of [Yuvi(ymgve)](https://github.com/ymgve/desse) this port maintains original functionality and expands on the base feature set.
 
- - python 3.10.8+
- - cryptography, dnserver, flask, waitress
- 
 
-Setup:
- - run command `pip install cryptography dnserver flask waitress`
- - edit `des_emu_config.json` to reflect your public ip in INFO_SS->ip
- - if `local_dns_server` is set to `true` ensure all records' ips match the one entered in the step before
 
-Starting the Server
- - run server with `python emulator.py`
- 
-Everyone that wants to connect to the server needs to configure the DNS to point to your DNS proxy in their PS3 network settings.
+ - Existing Features
+	 - Login Messages
+	 - Wandering Ghosts
+	 - Bloodstains
+	 - Messages
+	 - Matchmaking
+		 - US/EU/JP partitions
+ - Bugfixes
+	 - Same IP delineation
+ - New Features
+	 - Integrated DNS server
+	 - Auto Public IP Configuration
+	 - TOML Config
+	 - System ENV Config
+	 - Web UI
+	 - Web Admin
+	 - User/Player Management
+	 - TOS Flow Implemented
+ - TODO
+	 - Virtual Regions
+	 - Emulator Detection
+	 - Soul Level Matchmaking Control
+
+
+## Notes
+The actual connections between players are facilitated by PSN or RPCN. So long as the respective service is online this server should continue to work.
+
+## Requirements
+python 3.11+
+
+## Setup
+
+- run command `pip install -r requirements.txt`
+
+- edit `desse_config.toml` to reflect your public ip in STATUS_SERVER->ip
+
+- if `local_dns_server` is set to `true` ensure all records' ips match the one entered in the step before
+
+- Everyone that wants to connect to the server needs to configure the DNS to point to your DNS proxy in their PS3 network settings.
+
 No other changes should be necessary.
+  
+
+## Starting the Server
+
+- run server with `python emulator.py`
+
+## Using System ENV instead of a Config file
+To replicate the below toml using system environment variables 
+
+    [SERVER]
+    IP = "0.0.0.0"
+    PORT = 18000
+It should look like this:
+|ENV VAR NAME| VALUE |
+|--|--|
+|SERVER.IP |0.0.0.0|
+|SERVER.PORT|18000|

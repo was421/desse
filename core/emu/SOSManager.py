@@ -20,7 +20,7 @@ class SOSManager(object):
         for sos in SC().volatile.sos_fetch_all_in_region(region):
             if sos.updatetime + 30 < time.time():
                 logging.info("Deleted SOS %r due to inactivity" % sos)
-                SC().volatile.sos_remove(region,convert_to_bytearray(sos.characterID).decode())
+                SC().volatile.sos_remove(region,sos.get_characterID())
             else:
                 if sos.blockID == blockID:
                     if str(sos.sosID) in sosList:
@@ -38,7 +38,7 @@ class SOSManager(object):
 
     def handle_addSosData(self, params, region:str):
         sos = SOSData(params, SC().volatile.sos_fetch_index())
-        chr_str = convert_to_bytearray(sos.characterID).decode()
+        chr_str = sos.get_characterID()
         
         ratings = SC().persistent.player_fetch(chr_str).get_stats()
         sos.ratings = ratings[0:5]
@@ -81,12 +81,13 @@ class SOSManager(object):
         ghostID = int(params["ghostID"])
         NPRoomID = params["NPRoomID"]
         logging.debug(f"NPRoomID: {NPRoomID}")
+        logging.debug(f"Parsed NPRoomID {parse_nproomid(NPRoomID)}")
         logging.info("%r is attempting to summon id#%d" % (playerid, ghostID))
         
         for sos in SC().volatile.sos_fetch_all_in_region(region):
             if sos.sosID == ghostID:
                 logging.info("%r adds pending request for summon %r" % (playerid, sos))
-                SC().volatile.sos_store_pending_player(sos.characterID,NPRoomID)
+                SC().volatile.sos_store_pending_player(sos.get_characterID(),NPRoomID)
                 return 0x0a, "\x01"
                 
         logging.info("%r failed to summon, id#%d not present" % (playerid, ghostID))
@@ -95,13 +96,14 @@ class SOSManager(object):
     def handle_summonBlackGhost(self, params, region:str, playerid):
         NPRoomID = params["NPRoomID"]
         logging.debug(f"NPRoomID: {NPRoomID}")
+        logging.debug(f"Parsed NPRoomID {parse_nproomid(NPRoomID)}")
         logging.info("%r is attempting to summon for monk" % playerid)
         
         
         for sos in SC().volatile.sos_fetch_all_in_region(region): 
             if sos.blockID in (40070, 40071, 40072, 40073, 40074, 40170, 40171, 40172, 40270):
                 logging.info("%r adds pending request for monk %r" % (playerid, sos))
-                SC().volatile.sos_store_pending_monk(region,sos.characterID,NPRoomID)
+                SC().volatile.sos_store_pending_monk(region,sos.get_characterID(),NPRoomID)
                 return 0x23, "\x01"
                 
         logging.info("%r failed to summon for monk" % playerid)
@@ -111,7 +113,7 @@ class SOSManager(object):
         characterID = params["characterID"]
         sos = SC().volatile.sos_fetch(region,characterID)
         if sos is not None:
-            logging.debug("removing old SOS %r" % sos.characterID)
-            SC().volatile.sos_remove(region,sos.characterID)
+            logging.debug("removing old SOS %r" % sos.get_characterID())
+            SC().volatile.sos_remove(region,sos.get_characterID())
             
         return 0x15, "\x01"

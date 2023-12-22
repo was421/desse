@@ -5,23 +5,41 @@ import threading,os
 
 class FlaskContainer:
     flask_app:Flask
-    def __new__(cls,GetInstance:bool = False):
+    mode:str = "daemon"
+    port:int = 18000
+    def __new__(cls,name:str = "Default"):
         if not hasattr(cls, 'instance'):
-            cls.instance = super(FlaskContainer, cls).__new__(cls)
-            cls.instance._setup()
-        #this is kinda cursed but it really does work so uh, yeah
-        if(GetInstance):
-            return cls.instance
-        return cls.instance.flask_app
-    
-    def _setup(self):
-        self.flask_app = Flask(__name__,static_folder=os.path.abspath('web/static'),template_folder=os.path.abspath('web/templates'))
-    
-    def start_daemon(self,port):
-        threading.Thread(target=lambda: serve(self.flask_app,host='0.0.0.0',port=port),daemon=True).start()
+            cls.instance = {}
+        if cls.instance.get(name) is None:
+            cls.instance[name] = super(FlaskContainer, cls).__new__(cls)
+            cls.instance[name].flask_app = Flask(name)
+        return cls.instance[name]
+       
+    def start_daemon(self):
+        threading.Thread(target=lambda: serve(self.flask_app,host='0.0.0.0',port=self.port),daemon=True).start()
         
-    def start_blocking(self,port):
-        serve(self.flask_app,host='0.0.0.0',port=port)
+    def start_blocking(self):
+        serve(self.flask_app,host='0.0.0.0',port=self.port)
         
-    def start_dev(self,port):
-        self.flask_app.run(host='0.0.0.0',port=port)
+    def start_dev(self):
+        self.flask_app.debug = True
+        self.flask_app.run(host='0.0.0.0',port=self.port)
+        
+    def configure(self,port,mode:str = "daemon"):
+        self.port = port
+        self.mode = mode
+        
+    def start(self):
+        match self.mode:
+            case 'daemon':
+                self.start_daemon()
+            case 'blocking':
+                self.start_blocking()
+            case _:
+                self.start_dev()
+                
+        
+        
+        
+        
+        

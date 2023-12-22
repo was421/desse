@@ -47,7 +47,7 @@ class GhostManager(object):
         if validate_replayData(replayData):
             ghost = Ghost(characterID, ghostBlockID, replayData)
             
-            if characterID in SC().volatile.ghost_fetch_all():
+            if characterID in [g.characterID for g in SC().volatile.ghost_fetch_all()]:
                 prevGhostBlockID = SC().volatile.ghost_fetch(characterID).ghostBlockID
                 if ghostBlockID != prevGhostBlockID:
                     logging.debug("Player %r moved from %s to %s" % (characterID, BLOCK_NAMES[prevGhostBlockID], BLOCK_NAMES[ghostBlockID]))
@@ -59,7 +59,7 @@ class GhostManager(object):
         
         return 0x17, "\x01"
     
-    def get_current_players(self, region:str):
+    def get_current_players(self, region:str = "ALL"):
         blocks = {}
         regiontotal = {}
         regiontotal[US_REGION] = 0
@@ -69,9 +69,11 @@ class GhostManager(object):
         self._kill_stale_ghosts()
         
         for ghost in SC().volatile.ghost_fetch_all():
+            if regiontotal.get(ghost.region) is None:
+                regiontotal[ghost.region] = 0
             regiontotal[ghost.region] += 1
             
-            if ghost.region == region:
+            if region == "ALL" or ghost.region == region:
                 if ghost.ghostBlockID not in blocks:
                     blocks[ghost.ghostBlockID] = 0
                 blocks[ghost.ghostBlockID] += 1
