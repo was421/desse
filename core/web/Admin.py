@@ -48,7 +48,8 @@ class Admin:
                 Admin()._users[usr.get_id()] = usr
                 return redirect('/admin')
             return redirect('/login')
-        return render_template('login.html')
+        return render_template('admin_login.html')
+    
     @blueprint.route("/logout",methods=['POST'])
     @login_required
     def logout():
@@ -65,4 +66,4 @@ class Admin:
         ctx['player_data_headers'] = ["To","Do"]
         ctx['players'] = [[0,0]]
         #
-        return render_template('dashboard.html',**ctx),200
+        return render_template('admin_index.html',**ctx),200

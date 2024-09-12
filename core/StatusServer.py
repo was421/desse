@@ -29,7 +29,7 @@ class StatusServer:
                 
                 body = decrypt(request.get_data())
                 if(body is None):
-                    logging.warn(f"Non DeS Request Sent To DeS Endpoint {request.url}")
+                    logging.warning(f"Non DeS Request Sent To DeS Endpoint {request.url}")
                     return "You Shouldn't Be Here",401
                 
                 request.args = get_params(body)

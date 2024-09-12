@@ -53,45 +53,7 @@
             </div>
             <div id="layoutSidenav_content">
                 <main>
-                    <div class="container-fluid px-4">
-                        <h1 class="mt-4">Dashboard</h1>
-                        <ol class="breadcrumb mb-4">
-                            <li class="breadcrumb-item active">Dashboard</li>
-                        </ol>
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <i class="fas fa-table me-1"></i>
-                                All Players
-                            </div>
-                            <div class="card-body">
-                                <table id="datatablesSimple">
-                                    <thead>
-                                        <tr>
-                                            {% for player_data_header in player_data_headers %}
-                                                <th>{{player_data_header}}</th>
-                                            {% endfor %}
-                                        </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            {% for player_data_header in player_data_headers %}
-                                                <th>{{player_data_header}}</th>
-                                            {% endfor %}
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                        {% for player in players %}
-                                        <tr>
-                                            {% for player_data_element in player%}
-                                                <td>{{ player_data_element }}</td>
-                                            {% endfor%}
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                    {% block content %}{% endblock %}
                 </main>
                 <footer class="py-4 bg-light mt-auto">
                     <div class="container-fluid px-4">

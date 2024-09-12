@@ -80,7 +80,7 @@ class MessageManager(object):
             SC().persistent.player_store(player)
             logging.info("Updated blood message grade for player %r" % (msg.characterID))
         else:
-            logging.warn("No Such Player %r" % msg.characterID)
+            logging.warning("No Such Player %r" % msg.characterID)
         
         logging.info("Recommended message %s" % str(msg))
         

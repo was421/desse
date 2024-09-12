@@ -1,6 +1,10 @@
 from flask import Blueprint,request,Request
 from functools import wraps
-import base64,struct,time,uuid
+import base64
+import struct
+import time
+import uuid
+import logging
 
 from core.ServerInfo import ServerInfo
 from core.Config import Config
@@ -22,12 +26,12 @@ class Server:
         return cls.instance
     
     def _setup(self):        
-        self.GhostManager = GhostManager()
+        self.GhostManager   = GhostManager()
         self.MessageManager = MessageManager()
-        self.SOSManager = SOSManager()
-        self.PlayerManager = PlayerManager()
-        self.ReplayManager = ReplayManager()
-        self.ServerInfo = ServerInfo()
+        self.SOSManager     = SOSManager()
+        self.PlayerManager  = PlayerManager()
+        self.ReplayManager  = ReplayManager()
+        self.ServerInfo     = ServerInfo()
     
     def des_api():
         def _des_api(f):
@@ -38,7 +42,7 @@ class Server:
                 
                 body = decrypt(request.get_data())
                 if(body is None):
-                    logging.warn(f"Non DeS Request Sent To DeS Endpoint {request.url}")
+                    logging.warning(f"Non DeS Request Sent To DeS Endpoint {request.url}")
                     return "You Shouldn't Be Here",401
                 
                 request.args = get_params(body)
@@ -106,7 +110,7 @@ class Server:
     
     @blueprint.route('/<region>/<uuid4>/getAgreement.spd', methods=['POST'])
     @des_api()
-    def getAgreement(region,uuid4:str):
+    def getAgreement(region:str,uuid4:str):
         logging.debug(f"{region} getAgreement {request.args}")
         characterID = request.args.get("NPID") + "0"
         self = Server()
@@ -117,7 +121,7 @@ class Server:
     
     @blueprint.route('/<region>/<uuid4>/addNewAccount.spd', methods=['POST'])
     @des_api()
-    def addNewAccount(region,uuid4:str):
+    def addNewAccount(region:str,uuid4:str):
         logging.debug(f"{region} addNewAccount {request.args}")
         characterID = request.args.get("NPID") + "0"
         
@@ -130,14 +134,14 @@ class Server:
     
     @blueprint.route('/<region>/<uuid4>/initializeCharacter.spd', methods=['POST'])
     @des_api()
-    def initializeCharacter(region,uuid4:str):
+    def initializeCharacter(region:str,uuid4:str):
         self = Server()
         cmd, data, characterID = self.PlayerManager.handle_initializeCharacter(request.args)
         return cmd,data
     
     @blueprint.route('/<region>/<uuid4>/getQWCData.spd', methods=['POST'])
     @des_api()
-    def getQWCData(region,uuid4:str):
+    def getQWCData(region:str,uuid4:str):
         self = Server()
         ac = self.ServerInfo.get_active_connection(uuid4)
         characterID = ac.get_npid()
@@ -145,25 +149,25 @@ class Server:
     
     @blueprint.route('/<region>/<uuid4>/addQWCData.spd', methods=['POST'])
     @des_api()
-    def addQWCData(region,uuid4:str):
+    def addQWCData(region:str,uuid4:str):
         logging.debug(f"ADDQWC {request.args}")
         return 0x09, "\x01"
     
     @blueprint.route('/<region>/<uuid4>/getMultiPlayGrade.spd', methods=['POST'])
     @des_api()
-    def getMultiPlayGrade(region,uuid4:str):
+    def getMultiPlayGrade(region:str,uuid4:str):
         self = Server()
         return self.PlayerManager.handle_getMultiPlayGrade(request.args)
     
     @blueprint.route('/<region>/<uuid4>/getBloodMessageGrade.spd', methods=['POST'])
     @des_api()
-    def getBloodMessageGrade(region,uuid4:str):
+    def getBloodMessageGrade(region:str,uuid4:str):
         self = Server()
         return self.PlayerManager.handle_getBloodMessageGrade(request.args)
     
     @blueprint.route('/<region>/<uuid4>/getTimeMessage.spd', methods=['POST'])
     @des_api()
-    def getTimeMessage(region,uuid4:str):
+    def getTimeMessage(region:str,uuid4:str):
         self = Server()
         #TODO: Add Ban Support
         
@@ -178,88 +182,88 @@ class Server:
     
     @blueprint.route('/<region>/<uuid4>/getBloodMessage.spd', methods=['POST'])
     @des_api()
-    def getBloodMessage(region,uuid4:str):
+    def getBloodMessage(region:str,uuid4:str):
         self = Server()
         return self.MessageManager.handle_getBloodMessage(request.args)
     
     @blueprint.route('/<region>/<uuid4>/addBloodMessage.spd', methods=['POST'])
     @des_api()
-    def addBloodMessage(region,uuid4:str):
+    def addBloodMessage(region:str,uuid4:str):
         self = Server()
         return self.MessageManager.handle_addBloodMessage(request.args)
     
     @blueprint.route('/<region>/<uuid4>/updateBloodMessageGrade.spd', methods=['POST'])
     @des_api()
-    def updateBloodMessageGrade(region,uuid4:str):        
+    def updateBloodMessageGrade(region:str,uuid4:str):        
         self = Server()
         return self.MessageManager.handle_updateBloodMessageGrade(request.args)
     
     @blueprint.route('/<region>/<uuid4>/deleteBloodMessage.spd', methods=['POST'])
     @des_api()
-    def deleteBloodMessage(region,uuid4:str):
+    def deleteBloodMessage(region:str,uuid4:str):
         self = Server()
         return self.MessageManager.handle_deleteBloodMessage(request.args)
         
     @blueprint.route('/<region>/<uuid4>/getReplayList.spd', methods=['POST'])
     @des_api()
-    def getReplayList(region,uuid4:str):
+    def getReplayList(region:str,uuid4:str):
         self = Server()
         return self.ReplayManager.handle_getReplayList(request.args)
     
     @blueprint.route('/<region>/<uuid4>/getReplayData.spd', methods=['POST'])
     @des_api()
-    def getReplayData(region,uuid4:str):
+    def getReplayData(region:str,uuid4:str):
         self = Server()
         return self.ReplayManager.handle_getReplayData(request.args)
     
     @blueprint.route('/<region>/<uuid4>/addReplayData.spd', methods=['POST'])
     @des_api()
-    def addReplayData(region,uuid4:str):
+    def addReplayData(region:str,uuid4:str):
         self = Server()
         return self.ReplayManager.handle_addReplayData(request.args)
     
     @blueprint.route('/<region>/<uuid4>/getWanderingGhost.spd', methods=['POST'])
     @des_api()
-    def getWanderingGhost(region,uuid4:str):
+    def getWanderingGhost(region:str,uuid4:str):
         self = Server()
         return self.GhostManager.handle_getWanderingGhost(request.args)
     
     @blueprint.route('/<region>/<uuid4>/setWanderingGhost.spd', methods=['POST'])
     @des_api()
-    def setWanderingGhost(region,uuid4:str):
+    def setWanderingGhost(region:str,uuid4:str):
         self = Server()
         return self.GhostManager.handle_setWanderingGhost(request.args, region)
     
     @blueprint.route('/<region>/<uuid4>/getSosData.spd', methods=['POST'])
     @des_api()
-    def getSosData(region,uuid4:str):            
+    def getSosData(region:str,uuid4:str):            
         self = Server()
         return self.SOSManager.handle_getSosData(request.args, region)
     
     @blueprint.route('/<region>/<uuid4>/addSosData.spd', methods=['POST'])
     @des_api()
-    def addSosData(region,uuid4:str):             
+    def addSosData(region:str,uuid4:str):             
         self = Server()
         #
         return self.SOSManager.handle_addSosData(request.args, region)
     
     @blueprint.route('/<region>/<uuid4>/checkSosData.spd', methods=['POST'])
     @des_api()
-    def checkSosData(region,uuid4:str):            
+    def checkSosData(region:str,uuid4:str):            
         self = Server()
         #
         return self.SOSManager.handle_checkSosData(request.args, region)
     
     @blueprint.route('/<region>/<uuid4>/outOfBlock.spd', methods=['POST'])
     @des_api()
-    def outOfBlock(region,uuid4:str):             
+    def outOfBlock(region:str,uuid4:str):             
         self = Server()
         #
         return self.SOSManager.handle_outOfBlock(request.args, region)
     
     @blueprint.route('/<region>/<uuid4>/summonOtherCharacter.spd', methods=['POST'])
     @des_api()
-    def summonOtherCharacter(region,uuid4:str):              
+    def summonOtherCharacter(region:str,uuid4:str):              
         self = Server()
         ac = self.ServerInfo.get_active_connection(uuid4)
         characterID = ac.get_npid()
@@ -267,7 +271,7 @@ class Server:
     
     @blueprint.route('/<region>/<uuid4>/summonBlackGhost.spd', methods=['POST'])
     @des_api()
-    def summonBlackGhost(region,uuid4:str):            
+    def summonBlackGhost(region:str,uuid4:str):            
         self = Server()
         ac = self.ServerInfo.get_active_connection(uuid4)
         characterID = ac.get_npid()
@@ -275,19 +279,19 @@ class Server:
     
     @blueprint.route('/<region>/<uuid4>/initializeMultiPlay.spd', methods=['POST'])
     @des_api()
-    def initializeMultiPlay(region,uuid4:str):              
+    def initializeMultiPlay(region:str,uuid4:str):              
         self = Server()
         return self.PlayerManager.handle_initializeMultiPlay(request.args)
     
     @blueprint.route('/<region>/<uuid4>/finalizeMultiPlay.spd', methods=['POST'])
     @des_api()
-    def finalizeMultiPlay(region,uuid4:str):              
+    def finalizeMultiPlay(region:str,uuid4:str):              
         self = Server()
         return self.PlayerManager.handle_finalizeMultiPlay(request.args)
     
     @blueprint.route('/<region>/<uuid4>/updateOtherPlayerGrade.spd', methods=['POST'])
     @des_api()
-    def updateOtherPlayerGrade(region,uuid4:str):             
+    def updateOtherPlayerGrade(region:str,uuid4:str):             
         self = Server()
         ac = self.ServerInfo.get_active_connection(uuid4)
         characterID = ac.get_npid()
