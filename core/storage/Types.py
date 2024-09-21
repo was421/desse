@@ -2,7 +2,11 @@ import struct,time
 from flask_login import UserMixin
 from datetime import datetime
 from core.Util import *
+from typing import List, Tuple, Required
+from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
+#--Game Message Types----------------------------------------------------------
 class Player(object):
     #--keys--
     characterID:str = ""
@@ -12,7 +16,7 @@ class Player(object):
     banned:bool = False
     #--settings--
     mm_password = ""
-    slmm:bool = False
+    slmm:bool = True
     rpcs3:bool = False
     desired_tendency:int = 0
     #--ratings--
@@ -36,6 +40,7 @@ class Player(object):
     
     def __init__(self, characterID:str = "") -> None:
         self.characterID = characterID
+        super().__init__()
     
     def as_tuple(self) -> tuple[str,int,int,int,int,int,int,int,int]:
         return (self.characterID,self.gradeS,self.gradeA,self.gradeB,self.gradeC,self.gradeD,self.numsessions,self.messagerating,self.desired_tendency)
@@ -91,7 +96,6 @@ class Replay(object):
         self.ghostID, self.characterID, self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz, self.messageID, self.mainMsgID, self.addMsgCateID, self.replayBinary, self.legacy = row
         self.characterID = convert_to_bytearray(self.characterID)
         self.replayBinary = convert_to_bytearray(self.replayBinary)
-
 
     def to_db_row(self):
         return (self.ghostID, self.characterID, self.blockID, self.posx, self.posy, self.posz, self.angx, self.angy, self.angz, self.messageID, self.mainMsgID, self.addMsgCateID, self.replayBinary, self.legacy)
@@ -259,7 +263,12 @@ class ActiveConnection(object):
         
     def get_npid(self)->str:
         return self._characterID
-    
+#------------------------------------------------------------------------------
+
+#--SQLAlchemy Models-----------------------------------------------------------
+Base = declarative_base()
+
+#------------------------------------------------------------------------------
  
 class Account(UserMixin):
     _id:str

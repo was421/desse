@@ -1,9 +1,10 @@
 from core.storage.Types import Replay,SOSData,Player,Message,Ghost,ActiveConnection
+from core.storage.StorageModel import StorageModel
 from core.Util import *
 import logging
 
 
-class StorageModel:
+class SQLAlchemy(StorageModel):
     
     #Replay Data-Normally Persistent-------------------------------------------
     def replay_store(self, replay:Replay) -> int:
@@ -108,28 +109,3 @@ class StorageModel:
     def active_connection_fetch_all(self) -> list[ActiveConnection]:
         not_implemented()
     #--------------------------------------------------------------------------
-
-    #Admin-Normally Persistent-----------------------------------------------
-    def get_motd_list(self) -> list[str]:
-        not_implemented()
-
-    def get_player_specific_motd(self,characterID) -> tuple[str] | None:
-        not_implemented()
-
-    def get_tos(self) -> str:
-        not_implemented()
-
-    def is_player_banned(self,characterID:str) -> bool:
-        not_implemented()
-
-    #------------------------------------------------------------------------
-
-    #WebServer-Normally Persistent-------------------------------------------
-    def login_user(self,username:str,password:str) -> str | None:
-        not_implemented()
-        
-    def update_user_settings(self,username:str,settings:dict):
-        not_implemented()
-    
-    
-    #------------------------------------------------------------------------

@@ -35,9 +35,11 @@ PORT = 53
 FAILOVER = "1.1.1.1"
 
 [WEBUI]
+#isolates the webui to a different port
 ISOLATE = false
 PORT = 80
 [WEBUI.ADMIN]
+#isolates the adminui to a different port
 ISOLATE = false
 PORT = 80
 USER = "Admin"
