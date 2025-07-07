@@ -19,17 +19,39 @@ class InMemory(StorageModel):
         #ActiveConnection------------------------------------------------------
         self._active_connection:dict[str:ActiveConnection] = {}
         #----------------------------------------------------------------------
+
+        #Replay----------------------------------------------------------------
+        self._replays:dict[int,Replay] = {}
+        #----------------------------------------------------------------------
+
+        #Player----------------------------------------------------------------
+        self._players:dict[str,Player] = {}
+        #----------------------------------------------------------------------
+
+        #Message---------------------------------------------------------------
+        self._message_index:int = 0
+        self._messages:dict[int,Message] = {}
+        #----------------------------------------------------------------------
         
         
     #Replay Data-Normally Persistent-------------------------------------------
     def replay_store(self, replay:Replay) -> int:
-        not_implemented()
+        replay.ghostID = len(self._replays.keys())
+        self._replays[replay.ghostID] = replay
     
     def replay_fetch_specific(self,ghostID:int) -> Replay | None:
-        not_implemented()
+        return self._replays.get(ghostID)
     
     def replay_fetch_list(self,blockID:int,replayNum:int,legacy:bool = False) -> list[Replay]:
-        not_implemented()
+        res:list[Replay] = []
+        for replay in self._replays.values():
+            if replay.blockID == blockID:
+                if bool(replay.legacy) and legacy:
+                    continue
+            if len(res) >= replayNum:
+                break
+
+        return res
     #--------------------------------------------------------------------------
     
     #SOS-Normally Volatile-----------------------------------------------------
@@ -101,24 +123,37 @@ class InMemory(StorageModel):
     
     #Player-Normally Persistent------------------------------------------------
     def player_fetch(self,characterID:str) -> Player | None:
-        not_implemented()
+        return self._players.get(characterID)
         
     def player_store(self,player:Player):
-        not_implemented()
+        self._players[player.characterID] = player
     #--------------------------------------------------------------------------
     
     #Message-Normally Persistent-----------------------------------------------
     def message_fetch(self,blood_message_id:int) -> Message | None:
-        not_implemented()
+        return self._messages.get(blood_message_id)
         
     def message_store(self,msg:Message) -> int:
-        not_implemented()
+        self._message_index += 1
+        msg.bmID = self._message_index
+        self._messages[self._message_index] = msg
+        return msg.bmID
         
     def message_remove(self,blood_message_id:int):
-        not_implemented()
+        self._messages.pop(blood_message_id)
         
     def message_fetch_list(self,characterID:str, blockID:int, n_many:int,exclude_self:bool = False,legacy:bool = False) -> list[Message]:
-        not_implemented()
+        res:list[Message] = []
+        for msg in self._messages.values():
+            if msg.blockID == blockID:
+                if exclude_self and msg.characterID == characterID:
+                    continue
+                if bool(msg.legacy) and legacy:
+                    continue
+                res.append(msg)
+            if len(res) >= n_many:
+                break
+        return res
     #--------------------------------------------------------------------------
     
     #Ghost-Normally Volatile---------------------------------------------------

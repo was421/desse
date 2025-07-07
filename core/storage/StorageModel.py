@@ -128,8 +128,24 @@ class StorageModel:
     def login_user(self,username:str,password:str) -> str | None:
         not_implemented()
         
-    def update_user_settings(self,username:str,settings:dict):
+    def update_user_settings(self,account_uuid:str,settings:dict):
         not_implemented()
     
-    
+
     #------------------------------------------------------------------------
+
+    #ServerInfo-Normally Persistent-------------------------------------------
+    def is_player_banned(self,characterID:str) -> bool:
+        not_implemented()
+
+    def get_player_settings(self,characterID:str):
+        not_implemented()
+
+    def get_motd_list(self) -> list[str]:
+        not_implemented()
+
+    def get_player_specific_motd(self,characterID) -> tuple[str] | None:
+        not_implemented()
+
+    
+    #-------------------------------------------------------------------------

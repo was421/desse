@@ -1,11 +1,13 @@
+from dataclasses import dataclass
 import struct,time
 from flask_login import UserMixin
 from datetime import datetime
 from core.Util import *
 from typing import List, Tuple, Required
-from sqlalchemy import Column, Integer, String, create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
 
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
 #--Game Message Types----------------------------------------------------------
 class Player(object):
     #--keys--
@@ -37,11 +39,6 @@ class Player(object):
     numsessions:int = 0
     messagerating:int = 0
     
-    
-    def __init__(self, characterID:str = "") -> None:
-        self.characterID = characterID
-        super().__init__()
-    
     def as_tuple(self) -> tuple[str,int,int,int,int,int,int,int,int]:
         return (self.characterID,self.gradeS,self.gradeA,self.gradeB,self.gradeC,self.gradeD,self.numsessions,self.messagerating,self.desired_tendency)
     
@@ -61,11 +58,24 @@ class Player(object):
     
     def __repr__(self) -> str:
         return f"Player {self.characterID}"
-        
+ 
 class Replay(object):
-    def __init__(self):
-        pass
-        
+
+    ghostID:int = 0
+    characterID:str = ""
+    blockID:int = 0
+    posx:float = 0.0
+    posy:float = 0.0
+    posz:float = 0.0
+    angx:float = 0.0
+    angy:float = 0.0
+    angz:float = 0.0
+    messageID:int = 0
+    mainMsgID:int = 0
+    addMsgCateID:int = 0
+    replayBinary:bytes = b""
+    legacy:int = 0
+
     def unserialize(self, data):
         sio = io.BytesIO(data)
         self.ghostID = struct.unpack("<I", sio.read(4))[0]
@@ -75,7 +85,7 @@ class Replay(object):
         self.replayBinary = readcstring(sio)
         assert sio.read() == "".encode()
         self.legacy = 1
-
+    
     def from_params(self, params, ghostID, rawReplay):
         self.ghostID = ghostID
         self.characterID = params["characterID"]
@@ -175,14 +185,35 @@ class SOSData(object):
         return "<SOS id#%d %s %r %s lv%d>" % (self.sosID, BLOCK_NAMES[self.blockID], self.characterID, summontype, self.playerLevel)
 
 class Ghost(object):
+    characterID:str = ""
+    ghostBlockID:int = 0
+    replayData:bytes = b""
+    region:str = ""
+    timestamp:int = 0
+
     def __init__(self, characterID, ghostBlockID, replayData):
         self.characterID = characterID
         self.ghostBlockID = ghostBlockID
         self.replayData = replayData
         self.region = ""
-        self.timestamp = time.time()
+        self.timestamp = time.monotonic_ns()
 
 class Message(object):
+    bmID:int = 0
+    characterID:str = ""
+    blockID:int = 0
+    posx:float = 0.0
+    posy:float = 0.0
+    posz:float = 0.0
+    angx:float = 0.0
+    angy:float = 0.0
+    angz:float = 0.0
+    messageID:int = 0
+    mainMsgID:int = 0
+    addMsgCateID:int = 0
+    rating:int = 0
+    legacy:int = 0
+
     def __init__(self):
         pass
         
@@ -246,6 +277,7 @@ class ActiveConnection(object):
     _characterID:str = ""
     _ip:str = ""
     _connection_uuid4:str = ""
+    _db_uuid4:str = ""
     _region:str = ""
     _last_seen:datetime
     
@@ -265,42 +297,254 @@ class ActiveConnection(object):
         return self._characterID
 #------------------------------------------------------------------------------
 
-#--SQLAlchemy Models-----------------------------------------------------------
-Base = declarative_base()
+#--Website Message Types-------------------------------------------------------
+
+class Account(object):
+    id:str
+    username:str
+    password_hash:str
+    characters:List[tuple[str,str]]#list of (characterID,region)
+
 
 #------------------------------------------------------------------------------
- 
-class Account(UserMixin):
-    _id:str
-    _characterID:str
-    _region:str
-    _rpcs3:bool
-    _banned:bool
-    _connection_uuid4:str
-    _ip:str
-    _last_login:datetime
-    _mm_password:str
-    _slmm:bool
-    _player:Player
+
+#--SQLAlchemy Models-----------------------------------------------------------
+class Base(DeclarativeBase):
+    pass
+
+class PlayerModel(Base):
+    __tablename__ = 'players'
+    #--keys--
+    id: Mapped[int] = mapped_column(primary_key=True)
+    characterID: Mapped[str] = mapped_column()
+    #--misc data--
+    region: Mapped[str] = mapped_column()
+    ip: Mapped[str] = mapped_column()
+    last_login: Mapped[datetime] = mapped_column()
+    banned: Mapped[bool] = mapped_column()
+    #--settings--
+    mm_password: Mapped[str] = mapped_column()
+    slmm: Mapped[bool] = mapped_column()
+    rpcs3: Mapped[bool] = mapped_column()
+    desired_tendency: Mapped[int] = mapped_column()
+    #--ratings--
+    gradeS: Mapped[int] = mapped_column()
+    gradeA: Mapped[int] = mapped_column()
+    gradeB: Mapped[int] = mapped_column()
+    gradeC: Mapped[int] = mapped_column()   
+    gradeD: Mapped[int] = mapped_column()
+    #--stored tendancy--
+    wb1: Mapped[int] = mapped_column()
+    wb2: Mapped[int] = mapped_column()
+    wb3: Mapped[int] = mapped_column()
+    wb4: Mapped[int] = mapped_column()
+    wb5: Mapped[int] = mapped_column()
+    wb6: Mapped[int] = mapped_column()
+    wb7: Mapped[int] = mapped_column()
+    #--stats--
+    numsessions: Mapped[int] = mapped_column()
+    messagerating: Mapped[int] = mapped_column()
+
+    @classmethod
+    def to_player(self):
+        player = Player()
+        player.characterID = self.characterID
+        player.region = self.region
+        player.ip = self.ip
+        player.banned = self.banned
+        player.mm_password = self.mm_password
+        player.slmm = self.slmm
+        player.rpcs3 = self.rpcs3
+        player.desired_tendency = self.desired_tendency
+        player.gradeS = self.gradeS
+        player.gradeA = self.gradeA
+        player.gradeB = self.gradeB
+        player.gradeC = self.gradeC
+        player.gradeD = self.gradeD
+        player.wb1 = self.wb1
+        player.wb2 = self.wb2
+        player.wb3 = self.wb3
+        player.wb4 = self.wb4
+        player.wb5 = self.wb5
+        player.wb6 = self.wb6
+        player.wb7 = self.wb7
+        player.numsessions = self.numsessions
+        player.messagerating = self.messagerating
+        return player
+
+class ReplayModel(Base):
+    __tablename__='replays'
+    ghostID: Mapped[int] = mapped_column(primary_key=True)
+    characterID: Mapped[str] = mapped_column()
+    blockID: Mapped[int] = mapped_column()
+    posx: Mapped[float] = mapped_column()
+    posy: Mapped[float] = mapped_column()
+    posz: Mapped[float] = mapped_column()
+    angx: Mapped[float] = mapped_column()
+    angy: Mapped[float] = mapped_column()
+    angz: Mapped[float] = mapped_column()
+    messageID: Mapped[int] = mapped_column()
+    mainMsgID: Mapped[int] = mapped_column()
+    addMsgCateID: Mapped[int] = mapped_column()
+    replayBinary: Mapped[bytes] = mapped_column()
+    legacy: Mapped[int] = mapped_column()
+
+    @classmethod
+    def to_replay(self):
+        replay = Replay()
+        replay.ghostID = self.ghostID
+        replay.characterID = self.characterID
+        replay.blockID = self.blockID
+        replay.posx = self.posx
+        replay.posy = self.posy
+        replay.posz = self.posz
+        replay.angx = self.angx
+        replay.angy = self.angy
+        replay.angz = self.angz
+        replay.messageID = self.messageID
+        replay.mainMsgID = self.mainMsgID
+        replay.addMsgCateID = self.addMsgCateID
+        replay.replayBinary = self.replayBinary
+        replay.legacy = self.legacy
+        return replay
+
+class SOSModel(Base):
+    __tablename__='sos'
+    sosID: Mapped[int] = mapped_column(primary_key=True)
+    blockID: Mapped[int] = mapped_column()
+    characterID: Mapped[str] = mapped_column()
+    posx: Mapped[float] = mapped_column()
+    posy: Mapped[float] = mapped_column()
+    posz: Mapped[float] = mapped_column()
+    angx: Mapped[float] = mapped_column()
+    angy: Mapped[float] = mapped_column()
+    angz: Mapped[float] = mapped_column()
+    messageID: Mapped[int] = mapped_column()
+    mainMsgID: Mapped[int] = mapped_column()
+    addMsgCateID: Mapped[int] = mapped_column()
+    playerInfo: Mapped[str] = mapped_column()
+    qwcwb: Mapped[int] = mapped_column()
+    qwclr: Mapped[int] = mapped_column()
+    isBlack: Mapped[int] = mapped_column()
+    playerLevel: Mapped[int] = mapped_column()
+    ratings: Mapped[Tuple[int]] = mapped_column()
+    totalsessions: Mapped[int] = mapped_column()
+    updatetime: Mapped[float] = mapped_column()
+
+    @classmethod
+    def to_sos(self):
+        sos = SOSData()
+        sos.sosID = self.sosID
+        sos.blockID = self.blockID
+        sos.characterID = self.characterID
+        sos.posx = self.posx
+        sos.posy = self.posy
+        sos.posz = self.posz
+        sos.angx = self.angx
+        sos.angy = self.angy
+        sos.angz = self.angz
+        sos.messageID = self.messageID
+        sos.mainMsgID = self.mainMsgID
+        sos.addMsgCateID = self.addMsgCateID
+        sos.playerInfo = self.playerInfo
+        sos.qwcwb = self.qwcwb
+        sos.qwclr = self.qwclr
+        sos.isBlack = self.isBlack
+        sos.playerLevel = self.playerLevel
+        sos.ratings = self.ratings
+        sos.totalsessions = self.totalsessions
+        sos.updatetime = self.updatetime
+        return sos
     
-    def init_from_player_logon(self,uuid4:str,characterID:str,ip:str,region:str):
-        self._connection_uuid4 = uuid4
-        self._characterID = characterID
-        self._ip = ip
-        self._region = region
+
+class GhostModel(Base):
+    __tablename__='ghosts'
+    characterID: Mapped[str] = mapped_column()
+    ghostBlockID: Mapped[int] = mapped_column()
+    replayData: Mapped[bytes] = mapped_column()
+    region: Mapped[str] = mapped_column()
+    timestamp: Mapped[int] = mapped_column()
     
-    def get_id(self):
-        return self._id
+    @classmethod
+    def to_ghost(self):
+        ghost = Ghost()
+        ghost.characterID = self.characterID
+        ghost.ghostBlockID = self.ghostBlockID
+        ghost.replayData = self.replayData
+        ghost.region = self.region
+        ghost.timestamp = self.timestamp
+        return ghost
+
+
+class MessageModel(Base):
+    __tablename__='messages'
+    bmID: Mapped[int] = mapped_column(primary_key=True)
+    characterID: Mapped[str] = mapped_column()
+    blockID: Mapped[int] = mapped_column()
+    posx: Mapped[float] = mapped_column()
+    posy: Mapped[float] = mapped_column()
+    posz: Mapped[float] = mapped_column()
+    angx: Mapped[float] = mapped_column()
+    angy: Mapped[float] = mapped_column()
+    angz: Mapped[float] = mapped_column()
+    messageID: Mapped[int] = mapped_column()
+    mainMsgID: Mapped[int] = mapped_column()
+    addMsgCateID: Mapped[int] = mapped_column()
+    rating: Mapped[int] = mapped_column()
+    legacy: Mapped[int] = mapped_column()
+
+    @classmethod
+    def to_message(self):
+        message = Message()
+        message.bmID = self.bmID
+        message.characterID = self.characterID
+        message.blockID = self.blockID
+        message.posx = self.posx
+        message.posy = self.posy
+        message.posz = self.posz
+        message.angx = self.angx
+        message.angy = self.angy
+        message.angz = self.angz
+        message.messageID = self.messageID
+        message.mainMsgID = self.mainMsgID
+        message.addMsgCateID = self.addMsgCateID
+        message.rating = self.rating
+        message.legacy = self.legacy
+        return message
     
-    def get_npid(self)->str:
-        return self._characterID
+class ActiveConnectionModel(Base):
+    __tablename__='active_connections'
+    characterID: Mapped[str] = mapped_column()
+    ip: Mapped[str] = mapped_column()
+    connection_uuid4: Mapped[str] = mapped_column(primary_key=True)
+    region: Mapped[str] = mapped_column()
+    last_seen: Mapped[datetime] = mapped_column()
     
-    def _as_db_tuple(self):
-        return (self._characterID,
-                self._region,
-                self._ip,
-                self._last_login,
-                int(self._banned),
-                self._mm_password,
-                int(self._slmm),
-                int(self._rpcs3))
+    @classmethod
+    def to_active_connection(self):
+        connection = ActiveConnection()
+        connection._characterID = self.characterID
+        connection._ip = self.ip
+        connection._connection_uuid4 = self.connection_uuid4
+        connection._region = self.region
+        connection._last_seen = self.last_seen
+        return connection
+    
+
+#--- Website Models -----------------------------------------------------------
+
+class AccountModel(Base):
+    __tablename__ = 'accounts'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column()
+    password_hash: Mapped[str] = mapped_column()
+
+    @classmethod
+    def to_account(self):
+        account = Account()
+        account.id = self.id
+        account.username = self.username
+        account.password_hash = self.password_hash
+        return account
+
+#------------------------------------------------------------------------------

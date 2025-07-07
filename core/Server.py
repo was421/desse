@@ -1,5 +1,7 @@
+from xml.etree.ElementTree import VERSION
 from flask import Blueprint,request,Request
 from functools import wraps
+from enum import Enum
 import base64
 import struct
 import time
@@ -16,6 +18,20 @@ from core.emu.PlayerManager import PlayerManager
 from core.emu.ReplayManager import ReplayManager
 from core.emu.SOSManager import SOSManager
 from core.Util import *
+
+class LoginStatus(Enum):
+    PRESENT_EULA      = 0x00
+    PRESENT_MOTD      = 0x01
+    ACCOUNT_SUSPENDED = 0x02
+    ACCOUNT_BANNED    = 0x03
+    MAINTENANCE       = 0x05
+    TERMINATED        = 0x06
+    VERSION_MISMATCH  = 0x07
+
+class TimeMessageStatus(Enum):
+    NOTHING     = 0x00
+    MAINTENANCE = 0x01
+    TERMINATED  = 0x02
 
 class Server:
     blueprint = Blueprint("SERVER",__name__)
@@ -80,9 +96,9 @@ class Server:
         #
         match(self.ServerInfo.update_player_data_and_check_banned(request.remote_addr,characterID)):
             case 'banned':
-                return 0x02, b"\x03\x00"
+                return 0x02, LoginStatus.ACCOUNT_BANNED + b"\x00"
             case 'new':
-                return 0x02, b"\x00\x00"
+                return 0x02, LoginStatus.PRESENT_EULA + b"\x00"
         
         
         #      
@@ -106,7 +122,7 @@ class Server:
         # 0x06 - online service has been terminated
         # 0x07 - network play cannot be used with this version
         
-        return 0x02, b"\x01" + len(motds).to_bytes(1,'big') + bytearray(motd_output,encoding="UTF-8")
+        return 0x02, LoginStatus.PRESENT_MOTD + len(motds).to_bytes(1,'big') + bytearray(motd_output,encoding="UTF-8")
     
     @blueprint.route('/<region>/<uuid4>/getAgreement.spd', methods=['POST'])
     @des_api()
@@ -122,10 +138,11 @@ class Server:
     @blueprint.route('/<region>/<uuid4>/addNewAccount.spd', methods=['POST'])
     @des_api()
     def addNewAccount(region:str,uuid4:str):
+        self = Server()
         logging.debug(f"{region} addNewAccount {request.args}")
         characterID = request.args.get("NPID") + "0"
         
-        Server().ServerInfo.create_player_data(request.remote_addr,characterID)
+        self.ServerInfo.create_player_data(request.remote_addr,characterID)
         
         #the response needs to be at least two bytes and the last being \x00
         res = characterID + "\x00"
@@ -178,7 +195,7 @@ class Server:
         # 0x01 - undergoing maintenance
         # 0x02 - online service has been terminated
 
-        return 0x22, "\x00\x00\x00"
+        return 0x22, TimeMessageStatus.NOTHING + b"\x00\x00"
     
     @blueprint.route('/<region>/<uuid4>/getBloodMessage.spd', methods=['POST'])
     @des_api()

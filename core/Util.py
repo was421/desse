@@ -1,3 +1,4 @@
+import re
 import base64, traceback, logging, zlib, io, struct, json, logging, sys
 from flask import Request
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -189,7 +190,7 @@ _packet_logger.setLevel(logging.DEBUG)
 _packet_logger.addHandler(logging.FileHandler(filename='packetlog.log'))
 def log_packet(request:Request):
         if(_packet_logging):
-            _packet_logger.debug("%r %r",request.headers,request.get_data())
+            _packet_logger.debug(f"{request.method} {request.url} {request.headers} {request.data} {request.form} {request.args}")
         pass
     
 BLOCK_NAMES:dict[int,str] = load_static_data("data/blocknames.json")

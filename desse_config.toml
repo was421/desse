@@ -6,7 +6,7 @@ DNS_SERVER =  true
 WEBUI = true
 ADMINUI = true
 AUTOMATIC_IP_CONFIG = false
-PACKET_LOGGING =  false
+PACKET_LOGGING =  true
 IS_DEVMODE = true
 
 [LOGGING]
@@ -74,3 +74,5 @@ IP =  "172.25.1.146"
 [SQLITE]
 ADMIN_DB_PATH =  "db/admin.sqlite"
 
+[STORAGE]
+db_connection_string =  "db/desse.db"

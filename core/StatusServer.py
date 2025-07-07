@@ -1,8 +1,11 @@
 from flask import Blueprint,request
 from functools import wraps
 from core.Config import Config
-from core.Util import *
-import uuid,logging,urllib.request
+from core.Util import log_packet,decrypt,get_params,convert_to_bytearray
+import uuid
+import logging
+import urllib.request
+import base64
 
 
 class StatusServer:
@@ -97,11 +100,12 @@ class StatusServer:
         template = template.replace(b"?host?",host.encode())
         template = template.replace(b"?port?",str(port).encode())
         template = template.replace(b"?uuid?",uuid4.encode())
+        print(template)
         return template
     
     @blueprint.route('/<endpoint>/ss.info', methods=['POST'])
     @des_api_bootstrap()
-    def bootstrap(endpoint):
+    def bootstrap(endpoint:str):
         self = StatusServer()
         uuid4 = str(uuid.uuid4())
         logging.debug(f"{request.remote_addr}|{uuid4} requested ss.info on {endpoint}")

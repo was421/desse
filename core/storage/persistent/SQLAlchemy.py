@@ -1,10 +1,24 @@
+import sqlalchemy
 from core.storage.Types import Replay,SOSData,Player,Message,Ghost,ActiveConnection
 from core.storage.StorageModel import StorageModel
+from core.Config import Config
 from core.Util import *
 import logging
 
 
 class SQLAlchemy(StorageModel):
+
+    engine:sqlalchemy.Engine
+
+    def __init__(self) -> None:
+        conf = Config().get_conf_dict("STORAGE")
+        if not conf:
+            raise Exception("No Storage Config Found")
+        db_connection_string = conf.get("db_connection_string")
+        if not db_connection_string:
+            raise Exception("No Database Connection String Found")
+        self.engine = sqlalchemy.create_engine(db_connection_string)
+        super().__init__()
     
     #Replay Data-Normally Persistent-------------------------------------------
     def replay_store(self, replay:Replay) -> int:
