@@ -27,6 +27,10 @@ class Server:
         self._packet_logger.setLevel(logging.DEBUG)
         self._packet_logger.addHandler(logging.FileHandler(filename='packetlog.log'))
         
+        self._message_info_logger = logging.getLogger("message_info")
+        self._message_info_logger.setLevel(logging.DEBUG)
+        self._message_info_logger.addHandler(logging.FileHandler(filename='message_info.log'))
+        
         self.GhostManager = GhostManager()
         self.MessageManager = MessageManager()
         self.SOSManager = SOSManager()
@@ -53,6 +57,12 @@ class Server:
                     return "You Shouldn't Be Here",401
                 
                 request.args = get_params(body)
+                endpoint = request.url.split('/')[-1]
+                Server()._message_info_logger.debug(f"""
+                Endpoint: {endpoint}
+                Keys: {list(request.args.keys())}
+                Args: {request.args}
+                                                    """)
                 
                 command,data = f(*args, **kwargs)
                 

@@ -1,6 +1,6 @@
 {
   "local_dns_server": true,
-  "packet_logging": false,
+  "packet_logging": true,
   "enable_webui":true,
   "automatic_ip_config":false,
   "LOGGING": {
