@@ -1,8 +1,8 @@
-from emu.models._base import SpdRequestModel, SpdResponseModel
+from emu.models._base import SpdRequest, SpdResponse
 from pydantic import Field
 from enum import Enum
 
-class LoginRequest(SpdRequestModel):
+class LoginRequest(SpdRequest):
     NPID: str = Field("")
     rang: str = Field("")
     region: str = Field("")
@@ -19,5 +19,6 @@ class LoginMessage(Enum):
     VERSION_MISMATCH = b'\x07'
     
     
-class LoginResponse(SpdResponseModel):
+class LoginResponse(SpdResponse):
     message_type: LoginMessage = Field(LoginMessage.LOGIN_SUCCESS)
+    motds:list[str] = Field(default_factory=list)
